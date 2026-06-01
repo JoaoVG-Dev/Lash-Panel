@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AnamnesisSection } from "@/components/anamnesis-section";
+import { ClientAppointmentsSection } from "@/components/client-appointments-section";
 import { ClientFormDialog } from "@/components/client-form-dialog";
 import { MaintenanceStatusSection } from "@/components/maintenance-status-section";
 import { deleteClient, getClient } from "@/lib/clients-api";
@@ -143,7 +144,7 @@ function ClientDetailPage() {
 
           <AnamnesisSection clientId={client.id} />
 
-          <FuturePlaceholder title="Atendimentos" description="Em breve." />
+          <ClientAppointmentsSection clientId={client.id} />
 
           <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <AlertDialogContent>

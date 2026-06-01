@@ -8,6 +8,60 @@ export type Database = {
   };
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          appointment_type: string;
+          client_id: string;
+          created_at: string;
+          id: string;
+          notes: string | null;
+          scheduled_at: string;
+          status: string;
+          technical_record_id: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          appointment_type?: string;
+          client_id: string;
+          created_at?: string;
+          id?: string;
+          notes?: string | null;
+          scheduled_at: string;
+          status?: string;
+          technical_record_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          appointment_type?: string;
+          client_id?: string;
+          created_at?: string;
+          id?: string;
+          notes?: string | null;
+          scheduled_at?: string;
+          status?: string;
+          technical_record_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "appointments_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_technical_record_id_fkey";
+            columns: ["technical_record_id"];
+            isOneToOne: false;
+            referencedRelation: "client_technical_records";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       client_anamnesis: {
         Row: {
           answers: Json;
