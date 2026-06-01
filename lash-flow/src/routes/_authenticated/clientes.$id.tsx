@@ -20,6 +20,7 @@ import { AnamnesisSection } from "@/components/anamnesis-section";
 import { ClientAppointmentsSection } from "@/components/client-appointments-section";
 import { ClientFormDialog } from "@/components/client-form-dialog";
 import { MaintenanceStatusSection } from "@/components/maintenance-status-section";
+import { WhatsAppActionButton } from "@/components/whatsapp-action-button";
 import { deleteClient, getClient } from "@/lib/clients-api";
 import { TechnicalRecordsSection } from "@/components/technical-records-section";
 
@@ -123,6 +124,11 @@ function ClientDetailPage() {
             </dl>
 
             <div className="mt-4 flex gap-2">
+              <WhatsAppActionButton
+                clientId={client.id}
+                clientName={client.name}
+                phone={client.phone}
+              />
               <Button className="flex-1 h-11" onClick={() => setEditOpen(true)}>
                 <Pencil className="h-4 w-4 mr-1" /> Editar
               </Button>

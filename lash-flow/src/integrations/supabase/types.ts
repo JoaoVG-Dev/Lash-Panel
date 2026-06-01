@@ -298,6 +298,115 @@ export type Database = {
         };
         Relationships: [];
       };
+      whatsapp_message_logs: {
+        Row: {
+          appointment_id: string | null;
+          client_id: string | null;
+          created_at: string;
+          error_message: string | null;
+          id: string;
+          message: string;
+          message_type: string;
+          phone: string;
+          provider_message_id: string | null;
+          scheduled_for: string | null;
+          sent_at: string | null;
+          status: string;
+          template_id: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          appointment_id?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          message: string;
+          message_type: string;
+          phone: string;
+          provider_message_id?: string | null;
+          scheduled_for?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          template_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          appointment_id?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          message?: string;
+          message_type?: string;
+          phone?: string;
+          provider_message_id?: string | null;
+          scheduled_for?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          template_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_logs_appointment_id_fkey";
+            columns: ["appointment_id"];
+            isOneToOne: false;
+            referencedRelation: "appointments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "whatsapp_message_logs_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "whatsapp_message_logs_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "whatsapp_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      whatsapp_templates: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_default: boolean;
+          message: string;
+          message_type: string;
+          name: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          message: string;
+          message_type: string;
+          name: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          message?: string;
+          message_type?: string;
+          name?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
