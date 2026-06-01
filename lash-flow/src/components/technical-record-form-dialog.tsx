@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listGlueProducts } from "@/lib/products-api";
+import { getUserSettings } from "@/lib/settings-api";
 import {
   createTechnicalRecord,
   PROCEDURE_TYPE_OPTIONS,
@@ -45,7 +46,7 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-const emptyForm = (): TechnicalRecordInput => ({
+const emptyForm = (defaultMaintenanceDays = 21): TechnicalRecordInput => ({
   procedure_type: "colocacao",
   lash_model: "",
   curl: "",
@@ -55,7 +56,7 @@ const emptyForm = (): TechnicalRecordInput => ({
   glue_product_id: null,
   glue_used: "",
   application_date: today(),
-  maintenance_days: 21,
+  maintenance_days: defaultMaintenanceDays,
   notes: "",
 });
 
@@ -63,6 +64,12 @@ export function TechnicalRecordFormDialog({ open, onOpenChange, clientId, record
   const qc = useQueryClient();
   const [form, setForm] = useState<TechnicalRecordInput>(emptyForm);
   const [sizeDraft, setSizeDraft] = useState("");
+
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: getUserSettings,
+    enabled: open,
+  });
 
   const { data: glueProducts } = useQuery({
     queryKey: ["products", "glues"],
@@ -87,11 +94,11 @@ export function TechnicalRecordFormDialog({ open, onOpenChange, clientId, record
               maintenance_days: record.maintenance_days ?? 21,
               notes: record.notes ?? "",
             }
-          : emptyForm(),
+          : emptyForm(settings?.maintenance_days_default ?? 21),
       );
       setSizeDraft("");
     }
-  }, [open, record]);
+  }, [open, record, settings?.maintenance_days_default]);
 
   const mutation = useMutation({
     mutationFn: async (input: TechnicalRecordInput) => {

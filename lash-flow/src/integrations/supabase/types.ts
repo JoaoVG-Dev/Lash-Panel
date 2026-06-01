@@ -170,6 +170,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_settings: {
+        Row: {
+          cancellation_message: string;
+          created_at: string;
+          default_whatsapp_message: string;
+          id: string;
+          maintenance_days_default: number;
+          reminder_days_before: number;
+          schedule_reminder_message: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          cancellation_message?: string;
+          created_at?: string;
+          default_whatsapp_message?: string;
+          id?: string;
+          maintenance_days_default?: number;
+          reminder_days_before?: number;
+          schedule_reminder_message?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          cancellation_message?: string;
+          created_at?: string;
+          default_whatsapp_message?: string;
+          id?: string;
+          maintenance_days_default?: number;
+          reminder_days_before?: number;
+          schedule_reminder_message?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

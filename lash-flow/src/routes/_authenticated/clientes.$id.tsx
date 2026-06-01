@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ClientFormDialog } from "@/components/client-form-dialog";
+import { MaintenanceStatusSection } from "@/components/maintenance-status-section";
 import { deleteClient, getClient } from "@/lib/clients-api";
 import { TechnicalRecordsSection } from "@/components/technical-records-section";
 
@@ -137,9 +138,10 @@ function ClientDetailPage() {
 
           <TechnicalRecordsSection clientId={client.id} />
 
+          <MaintenanceStatusSection clientId={client.id} />
+
           <FuturePlaceholder title="Anamnese" description="Em breve." />
           <FuturePlaceholder title="Atendimentos" description="Em breve." />
-          <FuturePlaceholder title="Manutenção" description="Em breve." />
 
           <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <AlertDialogContent>
