@@ -1,6 +1,8 @@
 import { addDays, differenceInCalendarDays, isAfter, isBefore, parseISO } from "date-fns";
+import { listClients } from "@/lib/clients-api";
+import { getUserSettings } from "@/lib/settings-api";
 import type { UserSettingsInput } from "@/lib/settings-api";
-import type { TechnicalRecord } from "@/lib/technical-records-api";
+import { listTechnicalRecords, type TechnicalRecord } from "@/lib/technical-records-api";
 
 export type MaintenanceStatusKey = "no_record" | "on_track" | "upcoming" | "overdue";
 
@@ -10,6 +12,12 @@ export type MaintenanceStatus = {
   description: string;
   dueDate: Date | null;
   daysUntilDue: number | null;
+};
+
+export type MaintenanceOverviewItem = {
+  clientId: string;
+  clientName: string;
+  status: MaintenanceStatus;
 };
 
 function startOfToday(referenceDate = new Date()) {
@@ -85,4 +93,31 @@ export function calculateMaintenanceStatus(
 export function formatMaintenanceDate(date: Date | null) {
   if (!date) return "-";
   return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(date);
+}
+
+export async function listMaintenanceOverview(): Promise<MaintenanceOverviewItem[]> {
+  const [settings, clients] = await Promise.all([getUserSettings(), listClients()]);
+  const rows = await Promise.all(
+    clients.map(async (client) => {
+      const records = await listTechnicalRecords(client.id);
+      return {
+        clientId: client.id,
+        clientName: client.name,
+        status: calculateMaintenanceStatus(records[0] ?? null, settings),
+      };
+    }),
+  );
+
+  return rows
+    .filter((item) => item.status.key === "upcoming" || item.status.key === "overdue")
+    .sort((a, b) => {
+      const aTime = a.status.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      const bTime = b.status.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      return aTime - bTime;
+    });
+}
+
+export async function countUpcomingMaintenances(): Promise<number> {
+  const overview = await listMaintenanceOverview();
+  return overview.filter((item) => item.status.key === "upcoming").length;
 }

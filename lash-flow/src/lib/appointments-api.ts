@@ -130,8 +130,7 @@ export async function countTodayAppointments(): Promise<number> {
     .from("appointments")
     .select("*", { count: "exact", head: true })
     .gte("scheduled_at", startOfDay(today).toISOString())
-    .lte("scheduled_at", endOfDay(today).toISOString())
-    .eq("status", "scheduled");
+    .lte("scheduled_at", endOfDay(today).toISOString());
   if (error) throw error;
   return count ?? 0;
 }
