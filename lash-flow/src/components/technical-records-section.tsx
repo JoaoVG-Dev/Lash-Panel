@@ -18,12 +18,14 @@ import {
 import { TechnicalRecordFormDialog } from "@/components/technical-record-form-dialog";
 import {
   deleteTechnicalRecord,
+  getGlueDisplayName,
+  getProcedureTypeLabel,
   listTechnicalRecords,
   type TechnicalRecord,
 } from "@/lib/technical-records-api";
 
 function formatDate(value: string | null | undefined) {
-  if (!value) return "—";
+  if (!value) return "-";
   const [y, m, d] = value.split("T")[0].split("-");
   if (!y || !m || !d) return value;
   return `${d}/${m}/${y}`;
@@ -70,7 +72,7 @@ export function TechnicalRecordsSection({ clientId }: { clientId: string }) {
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">Ficha técnica</h3>
         <Button size="sm" onClick={openCreate} className="h-9">
-          <Plus className="h-4 w-4 mr-1" /> Nova
+          <Plus className="mr-1 h-4 w-4" /> Nova
         </Button>
       </div>
 
@@ -139,90 +141,101 @@ export function TechnicalRecordsSection({ clientId }: { clientId: string }) {
               disabled={deleteMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteMutation.isPending ? "Excluindo…" : "Excluir"}
+              {deleteMutation.isPending ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </section>
   );
+}
 
-  function RecordCard({
-    record,
-    highlighted,
-    onEdit,
-    onDelete,
-  }: {
-    record: TechnicalRecord;
-    highlighted?: boolean;
-    onEdit: () => void;
-    onDelete: () => void;
-  }) {
-    const fields: Array<[string, string | null]> = [
-      ["Modelo", record.lash_model],
-      ["Curvatura", record.curl],
-      ["Espessura", record.thickness],
-      ["Tamanhos", record.sizes_used],
-      ["Volume", record.volume],
-      ["Cola", record.glue_used],
-    ];
-    const filled = fields.filter(([, v]) => v && v.trim());
+function RecordCard({
+  record,
+  highlighted,
+  onEdit,
+  onDelete,
+}: {
+  record: TechnicalRecord;
+  highlighted?: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const glueName = getGlueDisplayName(record);
+  const fields: Array<[string, string | null]> = [
+    ["Modelo", record.lash_model],
+    ["Curvatura", record.curl],
+    ["Espessura", record.thickness],
+    ["Volume", record.volume],
+    ["Cola", glueName],
+    ["Retorno", `${record.maintenance_days} dias`],
+  ];
+  const filled = fields.filter(([, v]) => v && v.trim());
 
-    return (
-      <div
-        className={`rounded-lg border p-3 ${
-          highlighted ? "border-primary/40 bg-primary/5" : "bg-background"
-        }`}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="truncate text-sm font-medium text-foreground">
-                {record.procedure_type}
-              </p>
-              {highlighted && <Badge variant="default">Atual</Badge>}
-            </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {formatDate(record.application_date)}
+  return (
+    <div
+      className={`rounded-lg border p-3 ${
+        highlighted ? "border-primary/40 bg-primary/5" : "bg-background"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-sm font-medium text-foreground">
+              {getProcedureTypeLabel(record.procedure_type)}
             </p>
+            {highlighted && <Badge variant="default">Atual</Badge>}
           </div>
-          <div className="flex shrink-0 gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 p-0"
-              onClick={onEdit}
-              aria-label="Editar"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 p-0 text-destructive hover:text-destructive"
-              onClick={onDelete}
-              aria-label="Excluir"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {formatDate(record.application_date)}
+          </p>
         </div>
-
-        {filled.length > 0 && (
-          <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-            {filled.map(([k, v]) => (
-              <div key={k} className="flex flex-col">
-                <dt className="text-muted-foreground">{k}</dt>
-                <dd className="text-foreground">{v}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-
-        {record.notes && (
-          <p className="mt-2 whitespace-pre-wrap text-xs text-foreground">{record.notes}</p>
-        )}
+        <div className="flex shrink-0 gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 w-9 p-0"
+            onClick={onEdit}
+            aria-label="Editar"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 w-9 p-0 text-destructive hover:text-destructive"
+            onClick={onDelete}
+            aria-label="Excluir"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-    );
-  }
+
+      {record.sizes_used.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {record.sizes_used.map((size) => (
+            <Badge key={size} variant="secondary" className="text-[10px]">
+              {size}
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {filled.length > 0 && (
+        <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+          {filled.map(([k, v]) => (
+            <div key={k} className="flex flex-col">
+              <dt className="text-muted-foreground">{k}</dt>
+              <dd className="text-foreground">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {record.notes && (
+        <p className="mt-2 whitespace-pre-wrap text-xs text-foreground">{record.notes}</p>
+      )}
+    </div>
+  );
 }

@@ -14,12 +14,14 @@ export type Database = {
           client_id: string;
           created_at: string;
           curl: string | null;
+          glue_product_id: string | null;
           glue_used: string | null;
           id: string;
           lash_model: string | null;
+          maintenance_days: number;
           notes: string | null;
           procedure_type: string;
-          sizes_used: string | null;
+          sizes_used: string[];
           thickness: string | null;
           updated_at: string;
           user_id: string;
@@ -30,12 +32,14 @@ export type Database = {
           client_id: string;
           created_at?: string;
           curl?: string | null;
+          glue_product_id?: string | null;
           glue_used?: string | null;
           id?: string;
           lash_model?: string | null;
+          maintenance_days?: number;
           notes?: string | null;
           procedure_type: string;
-          sizes_used?: string | null;
+          sizes_used?: string[];
           thickness?: string | null;
           updated_at?: string;
           user_id?: string;
@@ -46,12 +50,14 @@ export type Database = {
           client_id?: string;
           created_at?: string;
           curl?: string | null;
+          glue_product_id?: string | null;
           glue_used?: string | null;
           id?: string;
           lash_model?: string | null;
+          maintenance_days?: number;
           notes?: string | null;
           procedure_type?: string;
-          sizes_used?: string | null;
+          sizes_used?: string[];
           thickness?: string | null;
           updated_at?: string;
           user_id?: string;
@@ -63,6 +69,13 @@ export type Database = {
             columns: ["client_id"];
             isOneToOne: false;
             referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_technical_records_glue_product_id_fkey";
+            columns: ["glue_product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
             referencedColumns: ["id"];
           },
         ];
