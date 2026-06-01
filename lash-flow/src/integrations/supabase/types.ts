@@ -106,6 +106,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      products: {
+        Row: {
+          alert_quantity: number | null;
+          brand: string | null;
+          category: string | null;
+          created_at: string;
+          expiration_date: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          product_type: string;
+          quantity: number;
+          status: string;
+          unit: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          alert_quantity?: number | null;
+          brand?: string | null;
+          category?: string | null;
+          created_at?: string;
+          expiration_date?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          product_type?: string;
+          quantity?: number;
+          status?: string;
+          unit?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          alert_quantity?: number | null;
+          brand?: string | null;
+          category?: string | null;
+          created_at?: string;
+          expiration_date?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          product_type?: string;
+          quantity?: number;
+          status?: string;
+          unit?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
