@@ -29,9 +29,7 @@ function ClientesPage() {
     const q = search.trim().toLowerCase();
     if (!q) return data;
     return data.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.phone.toLowerCase().includes(q),
+      (c) => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q),
     );
   }, [data, search]);
 
@@ -105,7 +103,9 @@ function ClientRow({ client }: { client: Client }) {
           <div className="flex items-center gap-2">
             <p className="truncate text-sm font-medium text-foreground">{client.name}</p>
             {client.status === "inactive" && (
-              <Badge variant="secondary" className="text-[10px]">Inativa</Badge>
+              <Badge variant="secondary" className="text-[10px]">
+                Inativa
+              </Badge>
             )}
           </div>
           <p className="truncate text-xs text-muted-foreground">{client.phone}</p>

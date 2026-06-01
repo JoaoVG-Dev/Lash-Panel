@@ -167,10 +167,7 @@ export function TechnicalRecordFormDialog({ open, onOpenChange, clientId, record
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="curl">Curvatura</Label>
-              <Select
-                value={form.curl ?? ""}
-                onValueChange={(v) => setForm({ ...form, curl: v })}
-              >
+              <Select value={form.curl ?? ""} onValueChange={(v) => setForm({ ...form, curl: v })}>
                 <SelectTrigger id="curl">
                   <SelectValue placeholder="—" />
                 </SelectTrigger>

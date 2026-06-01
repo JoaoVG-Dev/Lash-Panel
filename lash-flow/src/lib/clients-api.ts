@@ -34,11 +34,7 @@ export async function listClients(): Promise<Client[]> {
 }
 
 export async function getClient(id: string): Promise<Client> {
-  const { data, error } = await supabase
-    .from("clients")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const { data, error } = await supabase.from("clients").select("*").eq("id", id).single();
   if (error) throw error;
   return data as Client;
 }
@@ -58,11 +54,7 @@ export async function createClient(input: ClientInput): Promise<Client> {
     status: input.status,
   };
 
-  const { data, error } = await supabase
-    .from("clients")
-    .insert(payload)
-    .select()
-    .single();
+  const { data, error } = await supabase.from("clients").insert(payload).select().single();
   if (error) throw error;
   return data as Client;
 }

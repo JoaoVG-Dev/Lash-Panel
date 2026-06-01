@@ -39,12 +39,18 @@ function DashboardPage() {
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-foreground">Próximas manutenções</h2>
-        <PageEmpty title="Nenhuma manutenção próxima" description="Quando você cadastrar atendimentos, eles aparecerão aqui." />
+        <PageEmpty
+          title="Nenhuma manutenção próxima"
+          description="Quando você cadastrar atendimentos, eles aparecerão aqui."
+        />
       </section>
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-foreground">Produtos com alerta</h2>
-        <PageEmpty title="Nenhum produto em alerta" description="Cadastre seus produtos para acompanhar validade e estoque." />
+        <PageEmpty
+          title="Nenhum produto em alerta"
+          description="Cadastre seus produtos para acompanhar validade e estoque."
+        />
       </section>
     </div>
   );

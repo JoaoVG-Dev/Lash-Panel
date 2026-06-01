@@ -86,9 +86,6 @@ export async function updateTechnicalRecord(
 }
 
 export async function deleteTechnicalRecord(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("client_technical_records")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("client_technical_records").delete().eq("id", id);
   if (error) throw error;
 }

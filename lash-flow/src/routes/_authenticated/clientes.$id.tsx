@@ -40,7 +40,12 @@ function ClientDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const { data: client, isLoading, isError, error } = useQuery({
+  const {
+    data: client,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["client", id],
     queryFn: () => getClient(id),
   });
@@ -86,9 +91,7 @@ function ClientDetailPage() {
                 {client.name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-lg font-semibold text-foreground">
-                  {client.name}
-                </h2>
+                <h2 className="truncate text-lg font-semibold text-foreground">{client.name}</h2>
                 <div className="mt-1">
                   <Badge variant={client.status === "active" ? "default" : "secondary"}>
                     {client.status === "active" ? "Ativa" : "Inativa"}
@@ -147,9 +150,7 @@ function ClientDetailPage() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={deleteMutation.isPending}>
-                  Cancelar
-                </AlertDialogCancel>
+                <AlertDialogCancel disabled={deleteMutation.isPending}>Cancelar</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={(e) => {
                     e.preventDefault();
@@ -169,15 +170,7 @@ function ClientDetailPage() {
   );
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  value: string;
-}) {
+function InfoRow({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-3">
       <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">

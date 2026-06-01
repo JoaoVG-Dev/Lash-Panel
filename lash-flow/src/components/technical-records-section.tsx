@@ -127,14 +127,10 @@ export function TechnicalRecordsSection({ clientId }: { clientId: string }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir ficha técnica?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>
-              Cancelar
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -224,9 +220,7 @@ export function TechnicalRecordsSection({ clientId }: { clientId: string }) {
         )}
 
         {record.notes && (
-          <p className="mt-2 whitespace-pre-wrap text-xs text-foreground">
-            {record.notes}
-          </p>
+          <p className="mt-2 whitespace-pre-wrap text-xs text-foreground">{record.notes}</p>
         )}
       </div>
     );

@@ -20,7 +20,11 @@ function AuthenticatedLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Carregando…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+        Carregando…
+      </div>
+    );
   }
   if (!session) return <Navigate to="/login" replace />;
 
@@ -29,7 +33,9 @@ function AuthenticatedLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-card px-4">
-        <h1 className="text-base font-semibold text-foreground">{current?.label ?? "Lash Manager"}</h1>
+        <h1 className="text-base font-semibold text-foreground">
+          {current?.label ?? "Lash Manager"}
+        </h1>
         <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sair">
           <LogOut className="h-4 w-4" />
         </Button>

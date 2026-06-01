@@ -1,6 +1,14 @@
 import type { ReactNode } from "react";
 
-export function PageEmpty({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
+export function PageEmpty({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}) {
   return (
     <div className="rounded-xl border border-dashed bg-card p-8 text-center">
       <p className="text-sm font-medium text-foreground">{title}</p>
