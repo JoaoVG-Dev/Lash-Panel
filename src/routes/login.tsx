@@ -2,18 +2,19 @@ import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Entrar — Lash Manager" }] }),
+  head: () => ({ meta: [{ title: "Entrar - Lash Manager" }] }),
   component: LoginPage,
 });
 
 function LoginPage() {
-  const { session, loading } = useAuth();
+  const { session, loading, authError } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -56,42 +57,60 @@ function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border bg-card p-5 shadow-sm">
-          <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-            />
-          </div>
-          <Button type="submit" className="w-full h-11" disabled={submitting}>
-            {submitting ? "Aguarde…" : mode === "signin" ? "Entrar" : "Criar conta"}
-          </Button>
-        </form>
+        {authError ? (
+          <Alert variant="destructive">
+            <AlertTitle>Supabase não configurado</AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>
+                Crie um arquivo .env.local na raiz do projeto com VITE_SUPABASE_URL e
+                VITE_SUPABASE_PUBLISHABLE_KEY.
+              </p>
+              <p className="text-xs opacity-90">{authError}</p>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <>
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4 rounded-xl border bg-card p-5 shadow-sm"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" className="w-full h-11" disabled={submitting}>
+                {submitting ? "Aguarde..." : mode === "signin" ? "Entrar" : "Criar conta"}
+              </Button>
+            </form>
 
-        <button
-          type="button"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="w-full text-sm text-muted-foreground hover:text-foreground"
-        >
-          {mode === "signin" ? "Não tem conta? Criar agora" : "Já tem conta? Entrar"}
-        </button>
+            <button
+              type="button"
+              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+              className="w-full text-sm text-muted-foreground hover:text-foreground"
+            >
+              {mode === "signin" ? "Não tem conta? Criar agora" : "Já tem conta? Entrar"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

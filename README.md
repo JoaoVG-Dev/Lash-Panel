@@ -21,7 +21,19 @@ npm run preview
 
 ## Ambiente
 
-Crie um arquivo `.env` local na raiz do repositorio com as variaveis do Supabase:
+Copie o exemplo e preencha as chaves do Supabase:
+
+```bash
+cp .env.example .env.local
+```
+
+No Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Variaveis esperadas:
 
 ```bash
 VITE_SUPABASE_URL=
@@ -31,7 +43,7 @@ SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-O arquivo `.env` nao deve ser versionado.
+Arquivos `.env` e `.env.local` nao devem ser versionados.
 
 ## Supabase
 
