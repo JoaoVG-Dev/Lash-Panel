@@ -130,6 +130,20 @@ As marcas são gerenciadas dentro da tela de produtos. A profissional pode criar
 
 Produtos antigos com `brand` em texto livre são migrados para `product_brands` pela migration `add_product_brands`; o campo `brand` permanece apenas como compatibilidade temporária.
 
+## Direção Visual
+
+O frontend segue uma estética beauty-tech premium, mobile-first, pensada para uso em celular e tablet durante a rotina de atendimento.
+
+Diretrizes atuais:
+
+- Paleta blush pink, ivory, off-white, taupe e charcoal.
+- Cards claros com borda sutil, sombra suave e estados visuais por badge/chip.
+- Botões e inputs touch-friendly.
+- Navegação inferior fixa no mobile e sidebar compacta em tablet/desktop.
+- Telas principais em cards responsivos, evitando tabelas no mobile.
+- Tipografia com títulos editoriais e interface sans limpa.
+- Microcopy em português brasileiro, com mensagens diretas e profissionais.
+
 ## Deploy na Vercel
 
 Este projeto usa TanStack Start/Nitro, não Vite estático puro. O build não deve ser publicado como `dist` porque a saída correta é gerada pelo Nitro em `.vercel/output`.
