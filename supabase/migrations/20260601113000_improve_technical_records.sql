@@ -15,7 +15,7 @@ RENAME COLUMN sizes_used_list TO sizes_used;
 
 CREATE INDEX idx_ctr_glue_product_id ON public.client_technical_records(glue_product_id);
 
-DROP POLICY "Users can create technical records for their own clients"
+DROP POLICY IF EXISTS "Users can create technical records for their own clients"
 ON public.client_technical_records;
 
 CREATE POLICY "Users can create technical records for their own clients"
@@ -36,7 +36,7 @@ WITH CHECK (
   )
 );
 
-DROP POLICY "Users can update their own technical records"
+DROP POLICY IF EXISTS "Users can update their own technical records"
 ON public.client_technical_records;
 
 CREATE POLICY "Users can update their own technical records"
