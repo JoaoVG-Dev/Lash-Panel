@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
+  CalendarPlus,
   CheckCircle2,
   Clock,
   Pencil,
@@ -13,6 +14,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+
+import { FilterChip, PageHeader, StatCard } from "@/components/app/page-shell";
 import { AppointmentFormDialog } from "@/components/appointment-form-dialog";
 import { PageEmpty } from "@/components/page-empty";
 import { WhatsAppActionButton } from "@/components/whatsapp-action-button";
@@ -30,7 +33,7 @@ import {
 } from "@/lib/appointments-api";
 
 export const Route = createFileRoute("/_authenticated/atendimentos")({
-  head: () => ({ meta: [{ title: "Atendimentos - Lash Manager" }] }),
+  head: () => ({ meta: [{ title: "Atendimentos - Lash Panel" }] }),
   component: AtendimentosPage,
 });
 
@@ -188,18 +191,25 @@ function AtendimentosPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <SummaryCard label="Hoje" value={today.length} />
-        <SummaryCard label="Próximos" value={upcoming.length} />
-        <SummaryCard label="Histórico" value={past.length} />
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Agenda"
+        title="Atendimentos"
+        description="Acompanhe o dia, reagende horários e fale com a cliente pelo WhatsApp."
+        icon={CalendarClock}
+        action={
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            Novo
+          </Button>
+        }
+      />
 
-      <div className="flex justify-end">
-        <Button className="h-11" onClick={openCreate}>
-          <Plus className="mr-1 h-4 w-4" /> Novo atendimento
-        </Button>
-      </div>
+      <section className="grid grid-cols-3 gap-2 sm:gap-3">
+        <StatCard label="Hoje" value={today.length} icon={Clock} tone="primary" />
+        <StatCard label="Próximos" value={upcoming.length} icon={CalendarPlus} tone="success" />
+        <StatCard label="Histórico" value={past.length} icon={CalendarClock} tone="lavender" />
+      </section>
 
       <FilterBar
         dateFilter={dateFilter}
@@ -209,15 +219,15 @@ function AtendimentosPage() {
       />
 
       {isLoading && (
-        <div className="space-y-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {[0, 1, 2].map((item) => (
-            <Skeleton key={item} className="h-28 w-full rounded-xl" />
+            <Skeleton key={item} className="h-40 w-full rounded-2xl" />
           ))}
         </div>
       )}
 
       {isError && (
-        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
           {error instanceof Error ? error.message : "Erro ao carregar atendimentos."}
         </div>
       )}
@@ -226,6 +236,12 @@ function AtendimentosPage() {
         <PageEmpty
           title="Nenhum atendimento ainda"
           description="Registre seus atendimentos para acompanhar agenda e histórico."
+          action={
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Novo atendimento
+            </Button>
+          }
         />
       )}
 
@@ -274,18 +290,6 @@ function groupAppointmentsByDate(appointments: Appointment[]) {
     .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <Clock className="h-4 w-4 text-primary" />
-      </div>
-      <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
-    </div>
-  );
-}
-
 function FilterBar({
   dateFilter,
   statusFilter,
@@ -298,46 +302,34 @@ function FilterBar({
   setStatusFilter: (value: StatusFilter) => void;
 }) {
   return (
-    <div className="space-y-3 rounded-xl border bg-card p-3">
-      <div className="flex gap-2 overflow-x-auto pb-1">
+    <section className="beauty-panel space-y-3 rounded-2xl p-3">
+      <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
         {DATE_FILTERS.map((filter) => (
-          <Button
+          <FilterChip
             key={filter.value}
-            type="button"
-            variant={dateFilter === filter.value ? "default" : "outline"}
-            size="sm"
-            className="h-9 shrink-0"
+            active={dateFilter === filter.value}
             onClick={() => setDateFilter(filter.value)}
           >
             {filter.label}
-          </Button>
+          </FilterChip>
         ))}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        <Button
-          type="button"
-          variant={statusFilter === "all" ? "default" : "outline"}
-          size="sm"
-          className="h-9 shrink-0"
-          onClick={() => setStatusFilter("all")}
-        >
+      <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
+        <FilterChip active={statusFilter === "all"} onClick={() => setStatusFilter("all")}>
           Todos
-        </Button>
+        </FilterChip>
         {APPOINTMENT_STATUS_OPTIONS.map((status) => (
-          <Button
+          <FilterChip
             key={status.value}
-            type="button"
-            variant={statusFilter === status.value ? "default" : "outline"}
-            size="sm"
-            className="h-9 shrink-0"
+            active={statusFilter === status.value}
             onClick={() => setStatusFilter(status.value)}
           >
             {status.label}
-          </Button>
+          </FilterChip>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -356,9 +348,9 @@ function AppointmentSection({
   };
 }) {
   return (
-    <section className="space-y-2">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      <ul className="space-y-2">
+    <section className="space-y-3">
+      <h2 className="px-1 text-sm font-bold uppercase text-muted-foreground">{title}</h2>
+      <ul className="grid gap-3 lg:grid-cols-2">
         {appointments.map((appointment) => (
           <AppointmentCard
             key={appointment.id}
@@ -396,18 +388,18 @@ function AppointmentCard({
   const canUseWhatsApp = Boolean(appointment.client?.id && appointment.client.phone);
 
   return (
-    <li className="rounded-xl border bg-card p-3">
+    <li className="beauty-card rounded-2xl p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-sm font-medium text-foreground">
+            <h3 className="truncate text-base font-bold text-foreground">
               {appointment.client?.name ?? "Cliente"}
-            </p>
+            </h3>
             <Badge variant={STATUS_VARIANTS[appointment.status]}>
               {getAppointmentStatusLabel(appointment.status)}
             </Badge>
           </div>
-          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+          <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
             <CalendarClock className="h-3.5 w-3.5" />
             {getAppointmentTypeLabel(appointment.appointment_type)} -{" "}
             {formatDateTime(appointment.scheduled_at)}
@@ -427,20 +419,19 @@ function AppointmentCard({
           )}
         </div>
 
-        <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={onEdit}>
+        <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar atendimento">
           <Pencil className="h-4 w-4" />
-          <span className="sr-only">Editar</span>
         </Button>
       </div>
 
       {appointment.notes && (
-        <p className="mt-3 whitespace-pre-wrap rounded-lg bg-muted/40 p-2 text-xs text-foreground">
+        <p className="mt-3 whitespace-pre-wrap rounded-2xl bg-secondary/60 p-3 text-xs text-foreground">
           {appointment.notes}
         </p>
       )}
 
       {appointment.status === "scheduled" && (
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {canUseWhatsApp && appointment.client && (
             <WhatsAppActionButton
               clientId={appointment.client.id}
@@ -453,33 +444,37 @@ function AppointmentCard({
               className="w-full"
             />
           )}
-          <Button variant="outline" className="h-10" onClick={onEdit} disabled={isMutating}>
-            <RotateCw className="mr-1 h-4 w-4" /> Reagendar
+          <Button variant="outline" onClick={onEdit} disabled={isMutating}>
+            <RotateCw className="h-4 w-4" />
+            Reagendar
           </Button>
-          <Button variant="outline" className="h-10" onClick={onComplete} disabled={isMutating}>
-            <CheckCircle2 className="mr-1 h-4 w-4" /> Concluir
+          <Button variant="outline" onClick={onComplete} disabled={isMutating}>
+            <CheckCircle2 className="h-4 w-4" />
+            Concluir
           </Button>
           <Button
             variant="outline"
-            className="h-10 text-destructive hover:text-destructive"
+            className="text-destructive hover:text-destructive"
             onClick={onNoShow}
             disabled={isMutating}
           >
-            <UserX className="mr-1 h-4 w-4" /> Faltou
+            <UserX className="h-4 w-4" />
+            Faltou
           </Button>
           <Button
             variant="outline"
-            className="h-10 text-destructive hover:text-destructive"
+            className="text-destructive hover:text-destructive"
             onClick={onCancel}
             disabled={isMutating}
           >
-            <XCircle className="mr-1 h-4 w-4" /> Cancelar
+            <XCircle className="h-4 w-4" />
+            Cancelar
           </Button>
         </div>
       )}
 
       {appointment.status === "canceled" && canUseWhatsApp && appointment.client && (
-        <div className="mt-3">
+        <div className="mt-4">
           <WhatsAppActionButton
             clientId={appointment.client.id}
             clientName={appointment.client.name}

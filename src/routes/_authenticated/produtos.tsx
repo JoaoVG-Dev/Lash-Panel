@@ -8,21 +8,16 @@ import {
   Pencil,
   Plus,
   Search,
+  Tags,
   Trash2,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+
+import { FilterChip, PageHeader, StatCard } from "@/components/app/page-shell";
+import { PageEmpty } from "@/components/page-empty";
+import { ProductBrandsSection } from "@/components/product-brands-section";
+import { ProductFormDialog } from "@/components/product-form-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,9 +28,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PageEmpty } from "@/components/page-empty";
-import { ProductBrandsSection } from "@/components/product-brands-section";
-import { ProductFormDialog } from "@/components/product-form-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   deleteProduct,
   getProductAlert,
@@ -50,7 +46,7 @@ import {
 } from "@/lib/products-api";
 
 export const Route = createFileRoute("/_authenticated/produtos")({
-  head: () => ({ meta: [{ title: "Produtos — Lash Manager" }] }),
+  head: () => ({ meta: [{ title: "Produtos — Lash Panel" }] }),
   component: ProdutosPage,
 });
 
@@ -78,6 +74,7 @@ function ProdutosPage() {
 
   const products = useMemo(() => data ?? [], [data]);
   const alertCount = useMemo(() => products.filter(isProductInAlert).length, [products]);
+  const glueCount = products.filter((product) => product.product_type === "cola").length;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -121,51 +118,65 @@ function ProdutosPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <SummaryCard label="Total" value={products.length} icon={Package} />
-        <SummaryCard label="Em alerta" value={alertCount} icon={AlertTriangle} tone="warning" />
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Estoque"
+        title="Produtos"
+        description="Controle marcas, validade, quantidade e produtos usados na ficha técnica."
+        icon={Package}
+        action={
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            Novo
+          </Button>
+        }
+      />
 
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <StatCard label="Produtos" value={products.length} icon={Package} />
+        <StatCard label="Em alerta" value={alertCount} icon={AlertTriangle} tone="warning" />
+        <div className="hidden sm:block">
+          <StatCard label="Colas" value={glueCount} icon={Tags} tone="lavender" />
+        </div>
+      </section>
+
+      <section className="beauty-panel space-y-3 rounded-2xl p-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar produto"
-            className="h-11 pl-9"
+            placeholder="Buscar produto, marca ou categoria"
+            className="pl-11"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
         </div>
-        <Button className="h-11" onClick={openCreate}>
-          <Plus className="mr-1 h-4 w-4" /> Novo
-        </Button>
-      </div>
 
-      <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as ProductFilter)}>
-        <SelectTrigger className="h-11">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="todos">Todos os tipos</SelectItem>
+        <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
+          <FilterChip active={typeFilter === "todos"} onClick={() => setTypeFilter("todos")}>
+            Todos
+          </FilterChip>
           {PRODUCT_TYPES.map((type) => (
-            <SelectItem key={type.value} value={type.value}>
+            <FilterChip
+              key={type.value}
+              active={typeFilter === type.value}
+              onClick={() => setTypeFilter(type.value)}
+            >
               {type.label}
-            </SelectItem>
+            </FilterChip>
           ))}
-        </SelectContent>
-      </Select>
+        </div>
+      </section>
 
       {isLoading && (
-        <div className="space-y-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {[0, 1, 2].map((item) => (
-            <Skeleton key={item} className="h-28 w-full rounded-xl" />
+            <Skeleton key={item} className="h-40 w-full rounded-2xl" />
           ))}
         </div>
       )}
 
       {isError && (
-        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
           {error instanceof Error ? error.message : "Erro ao carregar produtos."}
         </div>
       )}
@@ -175,14 +186,20 @@ function ProdutosPage() {
           title={products.length ? "Nenhum produto encontrado" : "Nenhum produto cadastrado"}
           description={
             products.length
-              ? "Tente outro nome ou tipo."
+              ? "Tente outro nome, marca ou tipo."
               : "Adicione produtos para acompanhar quantidade, validade e estoque."
+          }
+          action={
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Novo produto
+            </Button>
           }
         />
       )}
 
       {!isLoading && filtered.length > 0 && (
-        <ul className="space-y-2">
+        <ul className="grid gap-3 lg:grid-cols-2">
           {filtered.map((product) => (
             <ProductCard
               key={product.id}
@@ -225,28 +242,6 @@ function ProdutosPage() {
   );
 }
 
-function SummaryCard({
-  label,
-  value,
-  icon: Icon,
-  tone,
-}: {
-  label: string;
-  value: number;
-  icon: LucideIcon;
-  tone?: "warning";
-}) {
-  return (
-    <div className="rounded-xl border bg-card p-4">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <Icon className={tone === "warning" ? "h-4 w-4 text-amber-600" : "h-4 w-4 text-primary"} />
-      </div>
-      <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
-    </div>
-  );
-}
-
 function ProductCard({
   product,
   onEdit,
@@ -259,42 +254,37 @@ function ProductCard({
   const alert = getProductAlert(product);
 
   return (
-    <li className="rounded-xl border bg-card p-3">
+    <li className="beauty-card rounded-2xl p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
+            <h2 className="truncate text-base font-bold text-foreground">{product.name}</h2>
             <AlertBadge alert={alert} />
-            {product.status === "inactive" && (
-              <Badge variant="secondary" className="text-[10px]">
-                Inativo
-              </Badge>
-            )}
+            {product.status === "inactive" && <Badge variant="secondary">Inativo</Badge>}
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {getProductTypeLabel(product.product_type)}
             {getProductBrandName(product) ? ` • ${getProductBrandName(product)}` : ""}
           </p>
         </div>
 
         <div className="flex shrink-0 gap-1">
-          <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={onEdit}>
+          <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar produto">
             <Pencil className="h-4 w-4" />
-            <span className="sr-only">Editar</span>
           </Button>
           <Button
             variant="ghost"
-            size="sm"
-            className="h-9 w-9 p-0 text-destructive hover:text-destructive"
+            size="icon"
+            className="text-destructive hover:text-destructive"
             onClick={onDelete}
+            aria-label="Excluir produto"
           >
             <Trash2 className="h-4 w-4" />
-            <span className="sr-only">Excluir</span>
           </Button>
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
         <InfoPill label="Estoque" value={`${product.quantity} ${product.unit}`} />
         <InfoPill
           label="Alerta"
@@ -313,7 +303,7 @@ function ProductCard({
       </div>
 
       {product.notes && (
-        <p className="mt-3 whitespace-pre-wrap rounded-lg bg-muted/40 p-2 text-xs text-foreground">
+        <p className="mt-3 whitespace-pre-wrap rounded-2xl bg-secondary/60 p-3 text-xs text-foreground">
           {product.notes}
         </p>
       )}
@@ -322,7 +312,7 @@ function ProductCard({
 }
 
 function AlertBadge({ alert }: { alert: ProductAlert }) {
-  if (alert === "ok") return null;
+  if (alert === "ok") return <Badge variant="outline">OK</Badge>;
 
   const copy = {
     expired: "Vencido",
@@ -330,11 +320,7 @@ function AlertBadge({ alert }: { alert: ProductAlert }) {
     low_stock: "Estoque baixo",
   } satisfies Record<Exclude<ProductAlert, "ok">, string>;
 
-  return (
-    <Badge variant={alert === "expired" ? "destructive" : "secondary"} className="text-[10px]">
-      {copy[alert]}
-    </Badge>
-  );
+  return <Badge variant={alert === "expired" ? "destructive" : "secondary"}>{copy[alert]}</Badge>;
 }
 
 function InfoPill({
@@ -347,12 +333,12 @@ function InfoPill({
   icon?: LucideIcon;
 }) {
   return (
-    <div className="rounded-lg bg-muted/40 px-3 py-2">
-      <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+    <div className="rounded-2xl bg-secondary/70 px-3 py-2">
+      <p className="flex items-center gap-1 text-[11px] font-bold uppercase text-muted-foreground">
         {Icon && <Icon className="h-3 w-3" />}
         {label}
       </p>
-      <p className="mt-0.5 truncate text-xs font-medium text-foreground">{value}</p>
+      <p className="mt-1 truncate text-xs font-bold text-foreground">{value}</p>
     </div>
   );
 }
