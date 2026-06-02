@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+
+import { BrandMark } from "@/components/app/brand-mark";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,9 +21,10 @@ import {
   isPublicAnamnesisTokenUsable,
   submitPublicAnamnesis,
 } from "@/lib/anamnesis-public-api";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/anamnese/$token")({
-  head: () => ({ meta: [{ title: "Anamnese - Lash Manager" }] }),
+  head: () => ({ meta: [{ title: "Anamnese - Lash Panel" }] }),
   component: PublicAnamnesisPage,
 });
 
@@ -62,29 +65,26 @@ function PublicAnamnesisPage() {
   const invalidMessage = getInvalidMessage(tokenInfo);
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 text-foreground">
-      <div className="mx-auto w-full max-w-md space-y-4">
-        <header className="rounded-xl border bg-card p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <Badge variant="secondary">Anamnese</Badge>
-              <h1 className="mt-2 text-xl font-semibold tracking-tight">
-                {tokenInfo?.business_name ?? "Lash Manager"}
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Formulário de segurança antes do atendimento.
-              </p>
-            </div>
+    <main className="app-background min-h-screen px-4 py-6 text-foreground sm:px-6">
+      <div className="mx-auto w-full max-w-3xl space-y-5">
+        <header className="beauty-panel rounded-2xl p-5 sm:p-6">
+          <BrandMark />
+          <div className="mt-6">
+            <Badge variant="secondary">Anamnese segura</Badge>
+            <h1 className="display-title mt-3 text-4xl text-foreground sm:text-5xl">
+              {tokenInfo?.business_name ?? "Lash Panel"}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+              Responda com calma. Suas informações ajudam a profissional a realizar um atendimento
+              mais seguro.
+            </p>
           </div>
         </header>
 
         {isLoading && (
-          <div className="rounded-xl border bg-card p-4">
+          <div className="beauty-card rounded-2xl p-5">
             <Skeleton className="h-5 w-32" />
-            <Skeleton className="mt-3 h-24 w-full" />
+            <Skeleton className="mt-3 h-28 w-full" />
           </div>
         )}
 
@@ -113,29 +113,29 @@ function PublicAnamnesisPage() {
         )}
 
         {!submitted && tokenInfo && !invalidMessage && (
-          <form onSubmit={handleSubmit} className="rounded-xl border bg-card p-4">
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Cliente</p>
-              <p className="text-base font-semibold">{tokenInfo.client_name}</p>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <section className="beauty-card rounded-2xl p-5">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Cliente</p>
+              <p className="mt-1 text-xl font-bold">{tokenInfo.client_name}</p>
               {tokenInfo.professional_name && (
-                <p className="text-sm text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Profissional: {tokenInfo.professional_name}
                 </p>
               )}
-            </div>
+            </section>
 
-            <div className="mt-5 space-y-3">
+            <section className="grid gap-3 md:grid-cols-2">
               {ANAMNESIS_QUESTIONS.map((question) => (
-                <CheckboxRow
+                <QuestionToggle
                   key={question.key}
                   label={question.label}
-                  checked={Boolean(answers[question.key])}
-                  onCheckedChange={(checked) => setAnswers({ ...answers, [question.key]: checked })}
+                  value={Boolean(answers[question.key])}
+                  onChange={(checked) => setAnswers({ ...answers, [question.key]: checked })}
                 />
               ))}
-            </div>
+            </section>
 
-            <div className="mt-5 space-y-2">
+            <section className="beauty-card space-y-3 rounded-2xl p-5">
               <Label htmlFor="public-anamnesis-notes">Observações adicionais</Label>
               <Textarea
                 id="public-anamnesis-notes"
@@ -144,18 +144,31 @@ function PublicAnamnesisPage() {
                 onChange={(event) =>
                   setAnswers({ ...answers, additional_notes: event.target.value })
                 }
+                placeholder="Conte aqui qualquer informação importante para o atendimento."
               />
-            </div>
+            </section>
 
-            <div className="mt-5">
-              <CheckboxRow
-                label="Li e aceito o termo de responsabilidade para o procedimento."
-                checked={answers.accepted_terms}
-                onCheckedChange={(checked) => setAnswers({ ...answers, accepted_terms: checked })}
-              />
-            </div>
+            <section className="beauty-card rounded-2xl p-5">
+              <label className="flex items-start gap-3 text-sm">
+                <Checkbox
+                  checked={answers.accepted_terms}
+                  onCheckedChange={(value) =>
+                    setAnswers({ ...answers, accepted_terms: value === true })
+                  }
+                  className="mt-0.5"
+                />
+                <span>
+                  Li e aceito o termo de responsabilidade para o procedimento. Confirmo que as
+                  respostas são verdadeiras.
+                </span>
+              </label>
+              <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+                <ShieldCheck className="h-4 w-4 text-primary" />O link é individual e só pode ser
+                usado enquanto estiver válido.
+              </p>
+            </section>
 
-            <Button type="submit" className="mt-5 h-12 w-full" disabled={mutation.isPending}>
+            <Button type="submit" className="h-12 w-full" disabled={mutation.isPending}>
               {mutation.isPending ? "Enviando..." : "Enviar anamnese"}
             </Button>
           </form>
@@ -187,31 +200,52 @@ function StatusCard({
   success?: boolean;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-5 text-center">
-      {success && <CheckCircle2 className="mx-auto mb-3 h-9 w-9 text-primary" />}
-      <h2 className="text-lg font-semibold">{title}</h2>
+    <div className="beauty-card rounded-2xl p-6 text-center">
+      {success && <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-primary" />}
+      <h2 className="font-serif text-3xl font-bold">{title}</h2>
       <p className="mt-2 text-sm text-muted-foreground">{description}</p>
     </div>
   );
 }
 
-function CheckboxRow({
+function QuestionToggle({
   label,
-  checked,
-  onCheckedChange,
+  value,
+  onChange,
 }: {
   label: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
+  value: boolean;
+  onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex items-start gap-3 rounded-lg border bg-background p-3 text-sm">
-      <Checkbox
-        checked={checked}
-        onCheckedChange={(value) => onCheckedChange(value === true)}
-        className="mt-0.5"
-      />
-      <span className="text-foreground">{label}</span>
-    </label>
+    <div className="beauty-card rounded-2xl p-4">
+      <p className="text-sm font-bold text-foreground">{label}</p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          className={cn(
+            "h-11 rounded-xl border text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            value
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-input bg-card text-muted-foreground",
+          )}
+          onClick={() => onChange(true)}
+        >
+          Sim
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "h-11 rounded-xl border text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            !value
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-input bg-card text-muted-foreground",
+          )}
+          onClick={() => onChange(false)}
+        >
+          Não
+        </button>
+      </div>
+    </div>
   );
 }
