@@ -5,11 +5,19 @@ export type ProductType = "cola" | "fios" | "removedor" | "primer" | "cleanser" 
 export type ProductStatus = "active" | "inactive";
 export type ProductAlert = "expired" | "expiring" | "low_stock" | "ok";
 
+export type ProductBrandSummary = {
+  id: string;
+  name: string;
+  status: "active" | "inactive";
+};
+
 export type Product = {
   id: string;
   user_id: string;
   name: string;
   brand: string | null;
+  brand_id: string | null;
+  product_brand?: ProductBrandSummary | null;
   category: string | null;
   product_type: ProductType;
   quantity: number;
@@ -25,6 +33,7 @@ export type Product = {
 export type ProductInput = {
   name: string;
   brand?: string | null;
+  brand_id?: string | null;
   category?: string | null;
   product_type: ProductType;
   quantity: number;
@@ -45,6 +54,7 @@ export const PRODUCT_TYPES: Array<{ value: ProductType; label: string }> = [
 ];
 
 const EXPIRING_WINDOW_DAYS = 30;
+const PRODUCT_SELECT = "*, product_brand:product_brands(id,name,status)";
 
 function toNumber(value: unknown): number {
   if (typeof value === "number") return value;
@@ -57,6 +67,7 @@ function normalizeProduct(row: Product): Product {
     ...row,
     quantity: toNumber(row.quantity),
     alert_quantity: row.alert_quantity === null ? null : toNumber(row.alert_quantity),
+    product_brand: row.product_brand ?? null,
   };
 }
 
@@ -78,6 +89,7 @@ function normalizeInput(input: ProductInput) {
   return {
     name: input.name.trim(),
     brand: input.brand?.trim() || null,
+    brand_id: input.brand_id || null,
     category: input.category?.trim() || null,
     product_type: input.product_type,
     quantity,
@@ -91,6 +103,10 @@ function normalizeInput(input: ProductInput) {
 
 export function getProductTypeLabel(type: ProductType | string) {
   return PRODUCT_TYPES.find((item) => item.value === type)?.label ?? "Outros";
+}
+
+export function getProductBrandName(product: Pick<Product, "brand" | "product_brand">) {
+  return product.product_brand?.name ?? product.brand ?? null;
 }
 
 export function getProductAlert(product: Product, referenceDate = new Date()): ProductAlert {
@@ -118,7 +134,7 @@ export function isProductInAlert(product: Product) {
 export async function listProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(PRODUCT_SELECT)
     .order("name", { ascending: true });
   if (error) throwSupabaseError(error, "Erro ao carregar produtos.");
   return ((data ?? []) as Product[]).map(normalizeProduct);
@@ -127,7 +143,7 @@ export async function listProducts(): Promise<Product[]> {
 export async function listGlueProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(PRODUCT_SELECT)
     .eq("product_type", "cola")
     .eq("status", "active")
     .order("name", { ascending: true });
@@ -141,7 +157,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   const { data, error } = await supabase
     .from("products")
     .insert({ user_id: userId, ...normalizeInput(input) })
-    .select()
+    .select(PRODUCT_SELECT)
     .single();
   if (error) throwSupabaseError(error, "Erro ao criar produto.");
   return normalizeProduct(data as Product);
@@ -152,7 +168,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Pr
     .from("products")
     .update(normalizeInput(input))
     .eq("id", id)
-    .select()
+    .select(PRODUCT_SELECT)
     .single();
   if (error) throwSupabaseError(error, "Erro ao atualizar produto.");
   return normalizeProduct(data as Product);

@@ -34,10 +34,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PageEmpty } from "@/components/page-empty";
+import { ProductBrandsSection } from "@/components/product-brands-section";
 import { ProductFormDialog } from "@/components/product-form-dialog";
 import {
   deleteProduct,
   getProductAlert,
+  getProductBrandName,
   getProductTypeLabel,
   isProductInAlert,
   listProducts,
@@ -83,7 +85,7 @@ function ProdutosPage() {
       const matchesType = typeFilter === "todos" || product.product_type === typeFilter;
       const searchable = [
         product.name,
-        product.brand,
+        getProductBrandName(product),
         product.category,
         getProductTypeLabel(product.product_type),
       ]
@@ -192,6 +194,8 @@ function ProdutosPage() {
         </ul>
       )}
 
+      <ProductBrandsSection />
+
       <ProductFormDialog open={dialogOpen} onOpenChange={setDialogOpen} product={editing} />
 
       <AlertDialog open={!!toDelete} onOpenChange={(open) => !open && setToDelete(null)}>
@@ -269,7 +273,7 @@ function ProductCard({
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {getProductTypeLabel(product.product_type)}
-            {product.brand ? ` • ${product.brand}` : ""}
+            {getProductBrandName(product) ? ` • ${getProductBrandName(product)}` : ""}
           </p>
         </div>
 

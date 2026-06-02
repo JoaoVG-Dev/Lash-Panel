@@ -255,10 +255,44 @@ export type Database = {
         };
         Relationships: [];
       };
+      product_brands: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string;
+          normalized_name: string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name: string;
+          normalized_name: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          normalized_name?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       products: {
         Row: {
           alert_quantity: number | null;
           brand: string | null;
+          brand_id: string | null;
           category: string | null;
           created_at: string;
           expiration_date: string | null;
@@ -275,6 +309,7 @@ export type Database = {
         Insert: {
           alert_quantity?: number | null;
           brand?: string | null;
+          brand_id?: string | null;
           category?: string | null;
           created_at?: string;
           expiration_date?: string | null;
@@ -291,6 +326,7 @@ export type Database = {
         Update: {
           alert_quantity?: number | null;
           brand?: string | null;
+          brand_id?: string | null;
           category?: string | null;
           created_at?: string;
           expiration_date?: string | null;
@@ -304,7 +340,15 @@ export type Database = {
           updated_at?: string;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "products_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "product_brands";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       user_settings: {
         Row: {
