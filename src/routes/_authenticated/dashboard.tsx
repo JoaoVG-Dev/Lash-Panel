@@ -249,10 +249,10 @@ function QuickAction({
   label: string;
 }) {
   return (
-    <Button asChild variant="outline" className="h-12 justify-start">
-      <Link to={to}>
-        <Icon className="mr-2 h-4 w-4" />
-        {label}
+    <Button asChild variant="outline" className="h-16 min-w-0 px-2 py-2">
+      <Link to={to} className="flex min-w-0 flex-col items-center justify-center gap-1">
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="whitespace-normal text-center text-xs leading-tight">{label}</span>
       </Link>
     </Button>
   );
