@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { listGlueProducts } from "@/lib/products-api";
+import { getProductBrandName, listGlueProducts } from "@/lib/products-api";
 import { getUserSettings } from "@/lib/settings-api";
 import {
   createTechnicalRecord,
@@ -300,7 +300,9 @@ export function TechnicalRecordFormDialog({ open, onOpenChange, clientId, record
                 <SelectItem value="none">Nenhuma cola selecionada</SelectItem>
                 {(glueProducts ?? []).map((product) => (
                   <SelectItem key={product.id} value={product.id}>
-                    {product.brand ? `${product.name} • ${product.brand}` : product.name}
+                    {getProductBrandName(product)
+                      ? `${product.name} • ${getProductBrandName(product)}`
+                      : product.name}
                   </SelectItem>
                 ))}
               </SelectContent>

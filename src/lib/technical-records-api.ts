@@ -7,6 +7,12 @@ export type TechnicalRecordGlueProduct = {
   id: string;
   name: string;
   brand: string | null;
+  brand_id?: string | null;
+  product_brand?: {
+    id: string;
+    name: string;
+    status: "active" | "inactive";
+  } | null;
 };
 
 export type TechnicalRecord = {
@@ -92,18 +98,20 @@ export function getProcedureTypeLabel(type: string) {
 
 export function getGlueDisplayName(record: TechnicalRecord) {
   if (record.glue_product) {
-    return record.glue_product.brand
-      ? `${record.glue_product.name} - ${record.glue_product.brand}`
-      : record.glue_product.name;
+    const brandName = record.glue_product.product_brand?.name ?? record.glue_product.brand;
+    return brandName ? `${record.glue_product.name} - ${brandName}` : record.glue_product.name;
   }
 
   return record.glue_used;
 }
 
+const TECHNICAL_RECORD_SELECT =
+  "*, glue_product:products(id,name,brand,brand_id,product_brand:product_brands(id,name,status))";
+
 export async function listTechnicalRecords(clientId: string): Promise<TechnicalRecord[]> {
   const { data, error } = await supabase
     .from("client_technical_records")
-    .select("*, glue_product:products(id,name,brand)")
+    .select(TECHNICAL_RECORD_SELECT)
     .eq("client_id", clientId)
     .order("application_date", { ascending: false })
     .order("created_at", { ascending: false });
@@ -120,7 +128,7 @@ export async function createTechnicalRecord(
   const { data, error } = await supabase
     .from("client_technical_records")
     .insert({ user_id: userId, client_id: clientId, ...normalize(input) })
-    .select("*, glue_product:products(id,name,brand)")
+    .select(TECHNICAL_RECORD_SELECT)
     .single();
   if (error) throwSupabaseError(error, "Erro ao salvar ficha técnica.");
   return normalizeRecord(data as TechnicalRecord);
@@ -134,7 +142,7 @@ export async function updateTechnicalRecord(
     .from("client_technical_records")
     .update(normalize(input))
     .eq("id", id)
-    .select("*, glue_product:products(id,name,brand)")
+    .select(TECHNICAL_RECORD_SELECT)
     .single();
   if (error) throwSupabaseError(error, "Erro ao atualizar ficha técnica.");
   return normalizeRecord(data as TechnicalRecord);

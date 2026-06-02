@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,12 +15,15 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getOrCreateBrandByName, listBrands, type ProductBrand } from "@/lib/brands-api";
 import { Textarea } from "@/components/ui/textarea";
 import {
   createProduct,
+  getProductBrandName,
   PRODUCT_TYPES,
   updateProduct,
   type Product,
@@ -41,6 +44,7 @@ function emptyForm(): ProductInput {
   return {
     name: "",
     brand: "",
+    brand_id: null,
     category: "",
     product_type: "outros",
     quantity: 0,
@@ -55,6 +59,19 @@ function emptyForm(): ProductInput {
 export function ProductFormDialog({ open, onOpenChange, product }: Props) {
   const qc = useQueryClient();
   const [form, setForm] = useState<ProductInput>(emptyForm);
+  const [brandDialogOpen, setBrandDialogOpen] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+
+  const { data: brands } = useQuery({
+    queryKey: ["product-brands"],
+    queryFn: () => listBrands({ includeInactive: true }),
+    enabled: open,
+  });
+
+  const availableBrands = useMemo(
+    () => (brands ?? []).filter((brand) => brand.status === "active" || brand.id === form.brand_id),
+    [brands, form.brand_id],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -63,7 +80,8 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
       product
         ? {
             name: product.name,
-            brand: product.brand ?? "",
+            brand: getProductBrandName(product) ?? "",
+            brand_id: product.brand_id,
             category: product.category ?? "",
             product_type: product.product_type,
             quantity: product.quantity,
@@ -103,6 +121,33 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
     mutation.mutate(form);
   };
 
+  const selectBrand = (brand: ProductBrand | null) => {
+    setForm((current) => ({
+      ...current,
+      brand_id: brand?.id ?? null,
+      brand: brand?.name ?? null,
+    }));
+  };
+
+  const createBrandMutation = useMutation({
+    mutationFn: (name: string) => getOrCreateBrandByName(name),
+    onSuccess: (brand) => {
+      qc.invalidateQueries({ queryKey: ["product-brands"] });
+      selectBrand(brand);
+      setNewBrandName("");
+      setBrandDialogOpen(false);
+      toast.success("Marca selecionada");
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : "Erro ao criar marca");
+    },
+  });
+
+  const handleCreateBrand = (event: React.FormEvent) => {
+    event.preventDefault();
+    createBrandMutation.mutate(newBrandName);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
@@ -122,14 +167,41 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="product-brand">Marca</Label>
-              <Input
-                id="product-brand"
-                value={form.brand ?? ""}
-                onChange={(event) => setForm({ ...form, brand: event.target.value })}
-              />
+              <Select
+                value={form.brand_id ?? "none"}
+                onValueChange={(value) => {
+                  if (value === "create") {
+                    setBrandDialogOpen(true);
+                    return;
+                  }
+
+                  if (value === "none") {
+                    selectBrand(null);
+                    return;
+                  }
+
+                  const brand = (brands ?? []).find((item) => item.id === value) ?? null;
+                  selectBrand(brand);
+                }}
+              >
+                <SelectTrigger id="product-brand">
+                  <SelectValue placeholder="Selecione a marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem marca</SelectItem>
+                  {availableBrands.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.id}>
+                      {brand.name}
+                      {brand.status === "inactive" ? " (inativa)" : ""}
+                    </SelectItem>
+                  ))}
+                  <SelectSeparator />
+                  <SelectItem value="create">+ Criar nova marca</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="product-category">Categoria</Label>
@@ -142,7 +214,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="product-type">Tipo</Label>
               <Select
@@ -214,7 +286,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="product-expiration">Validade</Label>
               <Input
@@ -269,6 +341,39 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <Dialog open={brandDialogOpen} onOpenChange={setBrandDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova marca</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateBrand} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="new-brand-name">Nome da marca</Label>
+              <Input
+                id="new-brand-name"
+                value={newBrandName}
+                onChange={(event) => setNewBrandName(event.target.value)}
+                placeholder="Ex.: Lash Pro"
+                autoFocus
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setBrandDialogOpen(false)}
+                disabled={createBrandMutation.isPending}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={createBrandMutation.isPending}>
+                {createBrandMutation.isPending ? "Salvando..." : "Criar marca"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
