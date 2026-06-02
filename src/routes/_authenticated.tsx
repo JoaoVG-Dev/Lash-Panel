@@ -41,7 +41,7 @@ function AuthenticatedLayout() {
         </Button>
       </header>
 
-      <main className="flex-1 pb-20">
+      <main className="flex-1 pb-28">
         <div className="mx-auto w-full max-w-2xl px-4 py-4">
           <Outlet />
         </div>

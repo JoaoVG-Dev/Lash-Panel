@@ -47,13 +47,39 @@ function AtendimentosPage() {
   });
 
   const appointments = useMemo(() => data ?? [], [data]);
+  const todayStart = useMemo(() => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, []);
+  const tomorrowStart = useMemo(() => {
+    const date = new Date(todayStart);
+    date.setDate(date.getDate() + 1);
+    return date;
+  }, [todayStart]);
+  const today = useMemo(
+    () =>
+      appointments.filter((appointment) => {
+        const scheduledAt = new Date(appointment.scheduled_at);
+        return scheduledAt >= todayStart && scheduledAt < tomorrowStart;
+      }),
+    [appointments, todayStart, tomorrowStart],
+  );
   const upcoming = useMemo(
     () =>
-      appointments.filter(
-        (appointment) =>
-          appointment.status === "scheduled" && new Date(appointment.scheduled_at) >= new Date(),
-      ),
-    [appointments],
+      appointments.filter((appointment) => {
+        const scheduledAt = new Date(appointment.scheduled_at);
+        return appointment.status === "scheduled" && scheduledAt >= tomorrowStart;
+      }),
+    [appointments, tomorrowStart],
+  );
+  const history = useMemo(
+    () =>
+      appointments.filter((appointment) => {
+        const scheduledAt = new Date(appointment.scheduled_at);
+        return scheduledAt < todayStart || appointment.status !== "scheduled";
+      }),
+    [appointments, todayStart],
   );
 
   const statusMutation = useMutation({
@@ -81,7 +107,8 @@ function AtendimentosPage() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <SummaryCard label="Hoje" value={today.length} />
         <SummaryCard label="Próximos" value={upcoming.length} />
         <SummaryCard label="Total" value={appointments.length} />
       </div>
@@ -114,18 +141,26 @@ function AtendimentosPage() {
       )}
 
       {!isLoading && appointments.length > 0 && (
-        <ul className="space-y-2">
-          {appointments.map((appointment) => (
-            <AppointmentCard
-              key={appointment.id}
-              appointment={appointment}
-              onEdit={() => openEdit(appointment)}
-              onComplete={() => statusMutation.mutate({ id: appointment.id, status: "completed" })}
-              onCancel={() => statusMutation.mutate({ id: appointment.id, status: "canceled" })}
-              isMutating={statusMutation.isPending}
-            />
-          ))}
-        </ul>
+        <div className="space-y-5">
+          <AppointmentSection
+            title="Hoje"
+            appointments={today}
+            openEdit={openEdit}
+            statusMutation={statusMutation}
+          />
+          <AppointmentSection
+            title="Próximos"
+            appointments={upcoming}
+            openEdit={openEdit}
+            statusMutation={statusMutation}
+          />
+          <AppointmentSection
+            title="Histórico"
+            appointments={history}
+            openEdit={openEdit}
+            statusMutation={statusMutation}
+          />
+        </div>
       )}
 
       <AppointmentFormDialog open={dialogOpen} onOpenChange={setDialogOpen} appointment={editing} />
@@ -142,6 +177,41 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
       </div>
       <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
     </div>
+  );
+}
+
+function AppointmentSection({
+  title,
+  appointments,
+  openEdit,
+  statusMutation,
+}: {
+  title: string;
+  appointments: Appointment[];
+  openEdit: (appointment: Appointment) => void;
+  statusMutation: {
+    isPending: boolean;
+    mutate: (variables: { id: string; status: AppointmentStatus }) => void;
+  };
+}) {
+  if (appointments.length === 0) return null;
+
+  return (
+    <section className="space-y-2">
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      <ul className="space-y-2">
+        {appointments.map((appointment) => (
+          <AppointmentCard
+            key={appointment.id}
+            appointment={appointment}
+            onEdit={() => openEdit(appointment)}
+            onComplete={() => statusMutation.mutate({ id: appointment.id, status: "completed" })}
+            onCancel={() => statusMutation.mutate({ id: appointment.id, status: "canceled" })}
+            isMutating={statusMutation.isPending}
+          />
+        ))}
+      </ul>
+    </section>
   );
 }
 

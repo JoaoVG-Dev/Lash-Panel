@@ -37,7 +37,7 @@ export function WhatsAppActionButton({
         message_type: messageType,
         phone,
         message,
-        status: "pending",
+        status: "manual_opened",
       }),
     onError: () => {
       toast.error("WhatsApp aberto, mas não foi possível registrar o log.");
@@ -54,7 +54,15 @@ export function WhatsAppActionButton({
       clientName,
     );
 
-    window.open(buildWhatsAppUrl(phone, message), "_blank", "noopener,noreferrer");
+    let url: string;
+    try {
+      url = buildWhatsAppUrl(phone, message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Telefone inválido para WhatsApp.");
+      return;
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
     logMutation.mutate(message);
   };
 

@@ -142,7 +142,11 @@ function ConfiguracoesPage() {
             </div>
           </section>
 
-          <Button type="submit" className="h-11 w-full" disabled={mutation.isPending}>
+          <Button
+            type="submit"
+            className="sticky bottom-20 z-10 h-11 w-full"
+            disabled={mutation.isPending}
+          >
             {mutation.isPending ? "Salvando..." : "Salvar"}
           </Button>
         </>

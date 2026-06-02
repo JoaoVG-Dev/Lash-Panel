@@ -118,6 +118,9 @@ export function TechnicalRecordFormDialog({ open, onOpenChange, clientId, record
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.application_date) return toast.error("Informe a data da aplicação");
+    if ((form.sizes_used ?? []).length === 0) {
+      return toast.error("Adicione pelo menos um tamanho de fio.");
+    }
     mutation.mutate(form);
   };
 
