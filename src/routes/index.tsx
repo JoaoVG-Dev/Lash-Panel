@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lash Manager" },
+      { title: "Lash Panel" },
       { name: "description", content: "Painel privado para profissionais de cílios." },
     ],
   }),
