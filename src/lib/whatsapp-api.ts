@@ -1,8 +1,23 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { UserSettings } from "@/lib/settings-api";
 import { getAuthenticatedUserId, throwSupabaseError } from "@/lib/supabase-errors";
 
-export type WhatsAppMessageType = "cancelamento" | "lembrete_manutencao" | "lembrete_agendar";
+export type WhatsAppMessageType =
+  | "cancelamento"
+  | "confirmacao_atendimento"
+  | "lembrete_manutencao"
+  | "lembrete_agendar"
+  | "link_anamnese";
 export type WhatsAppMessageStatus = "pending" | "manual_opened" | "sent" | "failed" | "canceled";
+
+export type WhatsAppTemplateVariables = {
+  nome?: string;
+  profissional?: string;
+  negocio?: string;
+  data?: string;
+  horario?: string;
+  link_anamnese?: string;
+};
 
 export type WhatsAppMessageLogInput = {
   client_id?: string | null;
@@ -38,12 +53,63 @@ export function buildWhatsAppUrl(phone: string, message: string) {
   return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
 }
 
-export function personalizeMessage(message: string, clientName: string) {
-  return message.replaceAll("{nome}", clientName);
+export function getWhatsAppTemplateMessage(
+  settings: UserSettings | null | undefined,
+  messageType: WhatsAppMessageType,
+) {
+  if (messageType === "cancelamento") {
+    return settings?.cancellation_message ?? "Oi, {nome}! Preciso cancelar seu atendimento.";
+  }
+
+  if (messageType === "confirmacao_atendimento") {
+    return (
+      settings?.appointment_confirmation_message ??
+      "Oi, {nome}! Seu atendimento com {profissional} está confirmado para {data} às {horario}."
+    );
+  }
+
+  if (messageType === "lembrete_agendar") {
+    return (
+      settings?.schedule_reminder_message ??
+      "Oi, {nome}! Já está na hora de agendar sua manutenção de cílios."
+    );
+  }
+
+  if (messageType === "link_anamnese") {
+    return (
+      settings?.anamnesis_link_message ??
+      "Oi, {nome}! Antes do atendimento, preencha sua anamnese por este link: {link_anamnese}"
+    );
+  }
+
+  return (
+    settings?.default_whatsapp_message ??
+    "Oi, {nome}! Sua manutenção de cílios está chegando. Quer agendar?"
+  );
+}
+
+export function personalizeMessage(
+  message: string,
+  variablesOrClientName: WhatsAppTemplateVariables | string,
+) {
+  const variables =
+    typeof variablesOrClientName === "string"
+      ? { nome: variablesOrClientName }
+      : variablesOrClientName;
+
+  return message
+    .replaceAll("{nome}", variables.nome ?? "")
+    .replaceAll("{profissional}", variables.profissional ?? "")
+    .replaceAll("{negocio}", variables.negocio ?? "")
+    .replaceAll("{data}", variables.data ?? "")
+    .replaceAll("{horario}", variables.horario ?? "")
+    .replaceAll("{link_anamnese}", variables.link_anamnese ?? "");
 }
 
 export async function logWhatsAppMessage(input: WhatsAppMessageLogInput): Promise<void> {
   const userId = await getAuthenticatedUserId();
+  const status = input.status ?? "manual_opened";
+  const openedAt = status === "manual_opened" ? new Date().toISOString() : null;
 
   const { error } = await supabase.from("whatsapp_message_logs").insert({
     user_id: userId,
@@ -51,9 +117,12 @@ export async function logWhatsAppMessage(input: WhatsAppMessageLogInput): Promis
     appointment_id: input.appointment_id ?? null,
     template_id: input.template_id ?? null,
     message_type: input.message_type,
+    template_type: input.message_type,
     phone: normalizeWhatsAppPhone(input.phone),
     message: input.message,
-    status: input.status ?? "manual_opened",
+    message_body: input.message,
+    status,
+    opened_at: openedAt,
     scheduled_for: input.scheduled_for ?? null,
   });
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, FilePenLine, LinkIcon, MessageCircle } from "lucide-react";
+import { Copy, FilePenLine, LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,13 +23,11 @@ import {
   type AnamnesisAnswers,
 } from "@/lib/anamnesis-api";
 import {
-  buildAnamnesisLinkMessage,
   buildPublicAnamnesisUrl,
-  canSendAnamnesisLinkByWhatsApp,
   createAnamnesisPublicToken,
   getLatestAnamnesisPublicToken,
 } from "@/lib/anamnesis-public-api";
-import { buildWhatsAppUrl } from "@/lib/whatsapp-api";
+import { WhatsAppActionButton } from "@/components/whatsapp-action-button";
 
 function formatDate(value: string | null) {
   if (!value) return "-";
@@ -110,25 +108,6 @@ export function AnamnesisSection({
     }
   };
 
-  const handleOpenWhatsApp = () => {
-    if (!anamnesisUrl) return;
-
-    if (!canSendAnamnesisLinkByWhatsApp(phone)) {
-      toast.error("Cadastre um telefone com DDD para enviar pelo WhatsApp.");
-      return;
-    }
-
-    try {
-      window.open(
-        buildWhatsAppUrl(phone, buildAnamnesisLinkMessage(clientName, anamnesisUrl)),
-        "_blank",
-        "noopener,noreferrer",
-      );
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Telefone inválido para WhatsApp.");
-    }
-  };
-
   return (
     <section className="rounded-xl border bg-card p-4">
       <div className="flex items-center justify-between gap-2">
@@ -204,16 +183,15 @@ export function AnamnesisSection({
                 <Copy className="mr-1 h-4 w-4" />
                 Copiar
               </Button>
-              <Button
-                type="button"
-                className="h-11"
-                variant="outline"
-                onClick={handleOpenWhatsApp}
+              <WhatsAppActionButton
+                clientId={clientId}
+                clientName={clientName}
+                phone={phone}
+                messageType="link_anamnese"
+                variables={{ link_anamnese: anamnesisUrl ?? "" }}
+                label="WhatsApp"
                 disabled={!anamnesisUrl}
-              >
-                <MessageCircle className="mr-1 h-4 w-4" />
-                WhatsApp
-              </Button>
+              />
             </div>
           </div>
         </div>

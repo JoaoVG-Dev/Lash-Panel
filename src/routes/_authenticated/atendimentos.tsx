@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageEmpty } from "@/components/page-empty";
+import { WhatsAppActionButton } from "@/components/whatsapp-action-button";
 import {
   getAppointmentStatusLabel,
   getAppointmentTypeLabel,
@@ -34,6 +35,17 @@ function formatDateTime(value: string) {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function formatAppointmentMessageVariables(value: string) {
+  const date = new Date(value);
+  return {
+    data: new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(date),
+    horario: new Intl.DateTimeFormat("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date),
+  };
 }
 
 function AtendimentosPage() {
@@ -228,6 +240,11 @@ function AppointmentCard({
   onCancel: () => void;
   isMutating: boolean;
 }) {
+  const whatsappMessageType =
+    appointment.status === "canceled" ? "cancelamento" : "confirmacao_atendimento";
+  const whatsappLabel = appointment.status === "canceled" ? "Avisar cancelamento" : "WhatsApp";
+  const canUseWhatsApp = Boolean(appointment.client?.id && appointment.client.phone);
+
   return (
     <li className="rounded-xl border bg-card p-3">
       <div className="flex items-start justify-between gap-3">
@@ -266,7 +283,19 @@ function AppointmentCard({
       )}
 
       {appointment.status === "scheduled" && (
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {canUseWhatsApp && appointment.client && (
+            <WhatsAppActionButton
+              clientId={appointment.client.id}
+              clientName={appointment.client.name}
+              phone={appointment.client.phone}
+              appointmentId={appointment.id}
+              messageType={whatsappMessageType}
+              variables={formatAppointmentMessageVariables(appointment.scheduled_at)}
+              label={whatsappLabel}
+              className="w-full"
+            />
+          )}
           <Button variant="outline" className="h-10" onClick={onComplete} disabled={isMutating}>
             <CheckCircle2 className="mr-1 h-4 w-4" /> Concluir
           </Button>
@@ -278,6 +307,21 @@ function AppointmentCard({
           >
             <XCircle className="mr-1 h-4 w-4" /> Cancelar
           </Button>
+        </div>
+      )}
+
+      {appointment.status === "canceled" && canUseWhatsApp && appointment.client && (
+        <div className="mt-3">
+          <WhatsAppActionButton
+            clientId={appointment.client.id}
+            clientName={appointment.client.name}
+            phone={appointment.client.phone}
+            appointmentId={appointment.id}
+            messageType="cancelamento"
+            variables={formatAppointmentMessageVariables(appointment.scheduled_at)}
+            label="Avisar cancelamento"
+            className="w-full"
+          />
         </div>
       )}
     </li>

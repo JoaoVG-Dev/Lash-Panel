@@ -5,25 +5,40 @@ import { Button } from "@/components/ui/button";
 import { getUserSettings } from "@/lib/settings-api";
 import {
   buildWhatsAppUrl,
+  getWhatsAppTemplateMessage,
   logWhatsAppMessage,
   personalizeMessage,
   type WhatsAppMessageType,
+  type WhatsAppTemplateVariables,
 } from "@/lib/whatsapp-api";
+import { cn } from "@/lib/utils";
 
 type Props = {
   clientId: string;
   clientName: string;
   phone: string;
+  appointmentId?: string | null;
   messageType?: WhatsAppMessageType;
-  variant?: "default" | "outline";
+  messageOverride?: string;
+  variables?: WhatsAppTemplateVariables;
+  label?: string;
+  variant?: "default" | "outline" | "ghost" | "link" | "secondary" | "destructive";
+  className?: string;
+  disabled?: boolean;
 };
 
 export function WhatsAppActionButton({
   clientId,
   clientName,
   phone,
+  appointmentId,
   messageType = "lembrete_manutencao",
+  messageOverride,
+  variables,
+  label = "WhatsApp",
   variant = "outline",
+  className,
+  disabled = false,
 }: Props) {
   const { data: settings } = useQuery({
     queryKey: ["settings"],
@@ -34,6 +49,7 @@ export function WhatsAppActionButton({
     mutationFn: (message: string) =>
       logWhatsAppMessage({
         client_id: clientId,
+        appointment_id: appointmentId ?? null,
         message_type: messageType,
         phone,
         message,
@@ -45,14 +61,13 @@ export function WhatsAppActionButton({
   });
 
   const handleClick = () => {
-    const baseMessage =
-      messageType === "lembrete_agendar"
-        ? settings?.schedule_reminder_message
-        : settings?.default_whatsapp_message;
-    const message = personalizeMessage(
-      baseMessage ?? "Oi {nome}! Sua manutenção de cílios está chegando. Quer agendar?",
-      clientName,
-    );
+    const template = messageOverride ?? getWhatsAppTemplateMessage(settings, messageType);
+    const message = personalizeMessage(template, {
+      nome: clientName,
+      profissional: settings?.professional_name ?? "",
+      negocio: settings?.business_name ?? "",
+      ...variables,
+    });
 
     let url: string;
     try {
@@ -64,12 +79,19 @@ export function WhatsAppActionButton({
 
     window.open(url, "_blank", "noopener,noreferrer");
     logMutation.mutate(message);
+    toast.success("WhatsApp aberto. Confirme o envio na conversa.");
   };
 
   return (
-    <Button type="button" variant={variant} className="h-11" onClick={handleClick}>
+    <Button
+      type="button"
+      variant={variant}
+      className={cn("h-11", className)}
+      onClick={handleClick}
+      disabled={disabled}
+    >
       <MessageCircle className="mr-1 h-4 w-4" />
-      WhatsApp
+      {label}
     </Button>
   );
 }
