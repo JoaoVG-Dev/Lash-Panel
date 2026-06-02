@@ -42,7 +42,7 @@ export function MaintenanceStatusSection({ clientId }: { clientId: string }) {
   const status = calculateMaintenanceStatus(latest, settings ?? { reminder_days_before: 3 });
 
   return (
-    <section className="rounded-xl border bg-card p-4">
+    <section className="beauty-card rounded-2xl p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">Manutenção</h3>
         {!isLoading && <Badge variant={BADGE_VARIANTS[status.key]}>{status.label}</Badge>}
@@ -87,8 +87,8 @@ function InfoTile({
   value: string;
 }) {
   return (
-    <div className="rounded-lg bg-muted/40 px-3 py-2">
-      <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+    <div className="rounded-2xl bg-secondary/70 px-3 py-2">
+      <p className="flex items-center gap-1 text-[11px] font-bold uppercase text-muted-foreground">
         <Icon className="h-3 w-3" />
         {label}
       </p>

@@ -34,7 +34,7 @@ export function ClientAppointmentsSection({ clientId }: { clientId: string }) {
   const appointments = (data ?? []).slice(0, 3);
 
   return (
-    <section className="rounded-xl border bg-card p-4">
+    <section className="beauty-card rounded-2xl p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">Atendimentos</h3>
         <Button asChild variant="outline" size="sm" className="h-9">
@@ -59,7 +59,7 @@ export function ClientAppointmentsSection({ clientId }: { clientId: string }) {
       {!isLoading && appointments.length > 0 && (
         <ul className="mt-3 space-y-2">
           {appointments.map((appointment) => (
-            <li key={appointment.id} className="rounded-lg bg-muted/40 p-3">
+            <li key={appointment.id} className="rounded-2xl bg-secondary/70 p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="flex items-center gap-1 text-sm font-medium text-foreground">

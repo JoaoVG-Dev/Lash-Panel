@@ -68,7 +68,7 @@ export function TechnicalRecordsSection({ clientId }: { clientId: string }) {
   };
 
   return (
-    <section className="rounded-xl border bg-card p-4">
+    <section className="beauty-card rounded-2xl p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">Ficha técnica</h3>
         <Button size="sm" onClick={openCreate} className="h-9">
@@ -86,7 +86,7 @@ export function TechnicalRecordsSection({ clientId }: { clientId: string }) {
         )}
 
         {!isLoading && !isError && records.length === 0 && (
-          <div className="rounded-lg border border-dashed p-4 text-center">
+          <div className="rounded-2xl border border-dashed p-4 text-center">
             <p className="text-sm text-foreground">Nenhuma ficha técnica ainda</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Cadastre a primeira ficha desta cliente.
@@ -174,8 +174,8 @@ function RecordCard({
 
   return (
     <div
-      className={`rounded-lg border p-3 ${
-        highlighted ? "border-primary/40 bg-primary/5" : "bg-background"
+      className={`rounded-2xl border p-3 ${
+        highlighted ? "border-primary/40 bg-primary/5" : "bg-card/80"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -223,11 +223,11 @@ function RecordCard({
       )}
 
       {filled.length > 0 && (
-        <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
           {filled.map(([k, v]) => (
-            <div key={k} className="flex flex-col">
-              <dt className="text-muted-foreground">{k}</dt>
-              <dd className="text-foreground">{v}</dd>
+            <div key={k} className="rounded-2xl bg-secondary/60 px-3 py-2">
+              <dt className="font-bold uppercase text-muted-foreground">{k}</dt>
+              <dd className="mt-1 truncate font-semibold text-foreground">{v}</dd>
             </div>
           ))}
         </dl>

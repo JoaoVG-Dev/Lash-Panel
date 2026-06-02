@@ -109,7 +109,7 @@ export function AnamnesisSection({
   };
 
   return (
-    <section className="rounded-xl border bg-card p-4">
+    <section className="beauty-card rounded-2xl p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">Anamnese</h3>
         {!isLoading && (
@@ -153,7 +153,7 @@ export function AnamnesisSection({
             </div>
 
             {anamnesisUrl && (
-              <div className="mt-3 rounded-md bg-muted p-2 text-xs text-muted-foreground">
+              <div className="mt-3 rounded-2xl bg-secondary/70 p-3 text-xs text-muted-foreground">
                 <p className="break-all">{anamnesisUrl}</p>
                 <p className="mt-1">Expira em {formatDate(publicToken.expires_at)}.</p>
               </div>
@@ -263,7 +263,7 @@ function CheckboxRow({
   onCheckedChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex items-start gap-3 rounded-lg border bg-background p-3 text-sm">
+    <label className="flex items-start gap-3 rounded-2xl border bg-card/80 p-3 text-sm">
       <Checkbox
         checked={checked}
         onCheckedChange={(value) => onCheckedChange(value === true)}
