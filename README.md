@@ -125,12 +125,23 @@ Cada abertura manual é registrada em `whatsapp_message_logs` com status `manual
 
 ## Deploy na Vercel
 
-Configuração sugerida:
+Este projeto usa TanStack Start/Nitro, não Vite estático puro. O build não deve ser publicado como `dist` porque a saída correta é gerada pelo Nitro em `.vercel/output`.
+
+Configuração sugerida na Vercel:
 
 - Root directory: raiz do repositório.
 - Install command: `npm install`
 - Build command: `npm run build`
-- Output: padrão do Vite/TanStack Start gerado em `dist`.
+- Output directory: deixe vazio.
+- Development command: `vite --port $PORT`
+
+O build command gera:
+
+```txt
+.vercel/output
+```
+
+Não configure rewrite SPA para `/index.html`; este app usa SSR/server bundle.
 
 Variáveis de ambiente necessárias na Vercel:
 
