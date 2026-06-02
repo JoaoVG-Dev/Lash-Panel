@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthenticatedUserId, throwSupabaseError } from "@/lib/supabase-errors";
 
 export type ClientStatus = "active" | "inactive";
 
@@ -29,20 +30,18 @@ export async function listClients(): Promise<Client[]> {
     .from("clients")
     .select("*")
     .order("name", { ascending: true });
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao carregar clientes.");
   return (data ?? []) as Client[];
 }
 
 export async function getClient(id: string): Promise<Client> {
   const { data, error } = await supabase.from("clients").select("*").eq("id", id).single();
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Cliente não encontrada.");
   return data as Client;
 }
 
 export async function createClient(input: ClientInput): Promise<Client> {
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth.user?.id;
-  if (!userId) throw new Error("Não autenticado");
+  const userId = await getAuthenticatedUserId();
 
   const payload = {
     user_id: userId,
@@ -55,7 +54,7 @@ export async function createClient(input: ClientInput): Promise<Client> {
   };
 
   const { data, error } = await supabase.from("clients").insert(payload).select().single();
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao criar cliente.");
   return data as Client;
 }
 
@@ -74,19 +73,19 @@ export async function updateClient(id: string, input: ClientInput): Promise<Clie
     .eq("id", id)
     .select()
     .single();
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao atualizar cliente.");
   return data as Client;
 }
 
 export async function deleteClient(id: string): Promise<void> {
   const { error } = await supabase.from("clients").delete().eq("id", id);
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao excluir cliente.");
 }
 
 export async function countClients(): Promise<number> {
   const { count, error } = await supabase
     .from("clients")
     .select("*", { count: "exact", head: true });
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao contar clientes.");
   return count ?? 0;
 }

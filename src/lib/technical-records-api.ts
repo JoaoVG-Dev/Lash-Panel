@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthenticatedUserId, throwSupabaseError } from "@/lib/supabase-errors";
 
 export type ProcedureType = "colocacao" | "manutencao";
 
@@ -52,12 +53,15 @@ function normalizeSizes(values: string[] | undefined) {
 }
 
 function normalize(input: TechnicalRecordInput) {
+  const sizes = normalizeSizes(input.sizes_used);
+  if (sizes.length === 0) throw new Error("Adicione pelo menos um tamanho de fio.");
+
   return {
     procedure_type: input.procedure_type,
     lash_model: input.lash_model?.trim() || null,
     curl: input.curl?.trim() || null,
     thickness: input.thickness?.trim() || null,
-    sizes_used: normalizeSizes(input.sizes_used),
+    sizes_used: sizes,
     volume: input.volume?.trim() || null,
     glue_product_id: input.glue_product_id || null,
     glue_used: input.glue_used?.trim() || null,
@@ -89,7 +93,7 @@ export function getProcedureTypeLabel(type: string) {
 export function getGlueDisplayName(record: TechnicalRecord) {
   if (record.glue_product) {
     return record.glue_product.brand
-      ? `${record.glue_product.name} • ${record.glue_product.brand}`
+      ? `${record.glue_product.name} - ${record.glue_product.brand}`
       : record.glue_product.name;
   }
 
@@ -103,7 +107,7 @@ export async function listTechnicalRecords(clientId: string): Promise<TechnicalR
     .eq("client_id", clientId)
     .order("application_date", { ascending: false })
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao carregar fichas técnicas.");
   return ((data ?? []) as TechnicalRecord[]).map(normalizeRecord);
 }
 
@@ -111,16 +115,14 @@ export async function createTechnicalRecord(
   clientId: string,
   input: TechnicalRecordInput,
 ): Promise<TechnicalRecord> {
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth.user?.id;
-  if (!userId) throw new Error("Não autenticado");
+  const userId = await getAuthenticatedUserId();
 
   const { data, error } = await supabase
     .from("client_technical_records")
     .insert({ user_id: userId, client_id: clientId, ...normalize(input) })
     .select("*, glue_product:products(id,name,brand)")
     .single();
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao salvar ficha técnica.");
   return normalizeRecord(data as TechnicalRecord);
 }
 
@@ -134,11 +136,11 @@ export async function updateTechnicalRecord(
     .eq("id", id)
     .select("*, glue_product:products(id,name,brand)")
     .single();
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao atualizar ficha técnica.");
   return normalizeRecord(data as TechnicalRecord);
 }
 
 export async function deleteTechnicalRecord(id: string): Promise<void> {
   const { error } = await supabase.from("client_technical_records").delete().eq("id", id);
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao excluir ficha técnica.");
 }

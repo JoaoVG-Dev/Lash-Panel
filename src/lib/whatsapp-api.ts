@@ -1,7 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthenticatedUserId, throwSupabaseError } from "@/lib/supabase-errors";
 
 export type WhatsAppMessageType = "cancelamento" | "lembrete_manutencao" | "lembrete_agendar";
-export type WhatsAppMessageStatus = "pending" | "sent" | "failed" | "canceled";
+export type WhatsAppMessageStatus = "pending" | "manual_opened" | "sent" | "failed" | "canceled";
 
 export type WhatsAppMessageLogInput = {
   client_id?: string | null;
@@ -22,8 +23,17 @@ export function normalizeWhatsAppPhone(phone: string) {
   return digits;
 }
 
+export function isValidWhatsAppPhone(phone: string) {
+  const normalizedPhone = normalizeWhatsAppPhone(phone);
+  return /^55\d{10,11}$/.test(normalizedPhone);
+}
+
 export function buildWhatsAppUrl(phone: string, message: string) {
   const normalizedPhone = normalizeWhatsAppPhone(phone);
+  if (!isValidWhatsAppPhone(normalizedPhone)) {
+    throw new Error("Informe um telefone válido com DDD para abrir o WhatsApp.");
+  }
+
   const encodedMessage = encodeURIComponent(message);
   return `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
 }
@@ -33,9 +43,7 @@ export function personalizeMessage(message: string, clientName: string) {
 }
 
 export async function logWhatsAppMessage(input: WhatsAppMessageLogInput): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth.user?.id;
-  if (!userId) throw new Error("Não autenticado");
+  const userId = await getAuthenticatedUserId();
 
   const { error } = await supabase.from("whatsapp_message_logs").insert({
     user_id: userId,
@@ -45,9 +53,9 @@ export async function logWhatsAppMessage(input: WhatsAppMessageLogInput): Promis
     message_type: input.message_type,
     phone: normalizeWhatsAppPhone(input.phone),
     message: input.message,
-    status: input.status ?? "pending",
+    status: input.status ?? "manual_opened",
     scheduled_for: input.scheduled_for ?? null,
   });
 
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao registrar mensagem de WhatsApp.");
 }

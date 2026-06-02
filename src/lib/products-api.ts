@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthenticatedUserId, throwSupabaseError } from "@/lib/supabase-errors";
 
 export type ProductType = "cola" | "fios" | "removedor" | "primer" | "cleanser" | "outros";
 export type ProductStatus = "active" | "inactive";
@@ -60,18 +61,29 @@ function normalizeProduct(row: Product): Product {
 }
 
 function normalizeInput(input: ProductInput) {
+  const quantity = Number(input.quantity);
+  const alertQuantity =
+    input.alert_quantity === null || input.alert_quantity === undefined
+      ? null
+      : Number(input.alert_quantity);
+
+  if (!Number.isFinite(quantity) || quantity < 0) {
+    throw new Error("Quantidade não pode ser negativa.");
+  }
+
+  if (alertQuantity !== null && (!Number.isFinite(alertQuantity) || alertQuantity < 0)) {
+    throw new Error("Alerta de estoque não pode ser negativo.");
+  }
+
   return {
     name: input.name.trim(),
     brand: input.brand?.trim() || null,
     category: input.category?.trim() || null,
     product_type: input.product_type,
-    quantity: Number.isFinite(input.quantity) ? input.quantity : 0,
+    quantity,
     unit: input.unit.trim() || "un",
     expiration_date: input.expiration_date || null,
-    alert_quantity:
-      input.alert_quantity === null || input.alert_quantity === undefined
-        ? null
-        : Number(input.alert_quantity),
+    alert_quantity: alertQuantity,
     status: input.status,
     notes: input.notes?.trim() || null,
   };
@@ -108,7 +120,7 @@ export async function listProducts(): Promise<Product[]> {
     .from("products")
     .select("*")
     .order("name", { ascending: true });
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao carregar produtos.");
   return ((data ?? []) as Product[]).map(normalizeProduct);
 }
 
@@ -119,21 +131,19 @@ export async function listGlueProducts(): Promise<Product[]> {
     .eq("product_type", "cola")
     .eq("status", "active")
     .order("name", { ascending: true });
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao carregar colas cadastradas.");
   return ((data ?? []) as Product[]).map(normalizeProduct);
 }
 
 export async function createProduct(input: ProductInput): Promise<Product> {
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth.user?.id;
-  if (!userId) throw new Error("Não autenticado");
+  const userId = await getAuthenticatedUserId();
 
   const { data, error } = await supabase
     .from("products")
     .insert({ user_id: userId, ...normalizeInput(input) })
     .select()
     .single();
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao criar produto.");
   return normalizeProduct(data as Product);
 }
 
@@ -144,13 +154,13 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Pr
     .eq("id", id)
     .select()
     .single();
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao atualizar produto.");
   return normalizeProduct(data as Product);
 }
 
 export async function deleteProduct(id: string): Promise<void> {
   const { error } = await supabase.from("products").delete().eq("id", id);
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao excluir produto.");
 }
 
 export async function countProductsInAlert(): Promise<number> {

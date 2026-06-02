@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
+import { getAuthenticatedUserId, throwSupabaseError } from "@/lib/supabase-errors";
 
 export type AnamnesisAnswers = {
   uses_contact_lenses: boolean;
@@ -57,7 +58,7 @@ export async function getClientAnamnesis(clientId: string): Promise<ClientAnamne
     .eq("client_id", clientId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao carregar anamnese.");
   return data ? normalizeRecord(data) : null;
 }
 
@@ -65,9 +66,7 @@ export async function saveClientAnamnesis(
   clientId: string,
   answers: AnamnesisAnswers,
 ): Promise<ClientAnamnesis> {
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth.user?.id;
-  if (!userId) throw new Error("Não autenticado");
+  const userId = await getAuthenticatedUserId();
 
   const payload = {
     user_id: userId,
@@ -82,6 +81,6 @@ export async function saveClientAnamnesis(
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao salvar anamnese.");
   return normalizeRecord(data);
 }

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthenticatedUserId, throwSupabaseError } from "@/lib/supabase-errors";
 
 export type UserSettings = {
   id: string;
@@ -24,9 +25,9 @@ export type UserSettingsInput = Pick<
 export const DEFAULT_SETTINGS: UserSettingsInput = {
   maintenance_days_default: 21,
   reminder_days_before: 3,
-  default_whatsapp_message: "Oi! Sua manutenção de cílios está chegando. Quer agendar?",
-  cancellation_message: "Oi! Preciso cancelar seu atendimento. Podemos remarcar?",
-  schedule_reminder_message: "Oi! Já está na hora de agendar sua manutenção de cílios.",
+  default_whatsapp_message: "Oi, {nome}! Sua manutenção de cílios está chegando. Quer agendar?",
+  cancellation_message: "Oi, {nome}! Preciso cancelar seu atendimento. Podemos remarcar?",
+  schedule_reminder_message: "Oi, {nome}! Já está na hora de agendar sua manutenção de cílios.",
 };
 
 function normalize(input: UserSettingsInput): UserSettingsInput {
@@ -42,35 +43,28 @@ function normalize(input: UserSettingsInput): UserSettingsInput {
   };
 }
 
-async function getUserId() {
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth.user?.id;
-  if (!userId) throw new Error("Não autenticado");
-  return userId;
-}
-
 export async function getUserSettings(): Promise<UserSettings> {
-  const userId = await getUserId();
+  const userId = await getAuthenticatedUserId();
   const { data, error } = await supabase
     .from("user_settings")
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao carregar configurações.");
   if (data) return data as UserSettings;
 
   return saveUserSettings(DEFAULT_SETTINGS);
 }
 
 export async function saveUserSettings(input: UserSettingsInput): Promise<UserSettings> {
-  const userId = await getUserId();
+  const userId = await getAuthenticatedUserId();
   const { data, error } = await supabase
     .from("user_settings")
     .upsert({ user_id: userId, ...normalize(input) }, { onConflict: "user_id" })
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) throwSupabaseError(error, "Erro ao salvar configurações.");
   return data as UserSettings;
 }
