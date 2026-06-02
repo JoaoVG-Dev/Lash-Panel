@@ -33,6 +33,10 @@ export type AppointmentInput = {
   notes?: string | null;
 };
 
+type NormalizedAppointmentInput = Omit<AppointmentInput, "scheduled_at"> & {
+  scheduled_at: string;
+};
+
 export const APPOINTMENT_STATUS_OPTIONS: Array<{ value: AppointmentStatus; label: string }> = [
   { value: "scheduled", label: "Agendado" },
   { value: "completed", label: "Concluído" },
@@ -48,18 +52,41 @@ export const APPOINTMENT_TYPE_OPTIONS = [
   { value: "outro", label: "Outro" },
 ];
 
-function normalize(input: AppointmentInput) {
+function normalize(input: AppointmentInput): NormalizedAppointmentInput {
   if (!input.client_id) throw new Error("Selecione uma cliente válida.");
   if (!input.scheduled_at) throw new Error("Informe a data e horário do atendimento.");
+
+  const scheduledAt = new Date(input.scheduled_at);
+  if (Number.isNaN(scheduledAt.getTime())) {
+    throw new Error("Informe uma data e horário válidos para o atendimento.");
+  }
 
   return {
     client_id: input.client_id,
     technical_record_id: input.technical_record_id || null,
     appointment_type: input.appointment_type.trim() || "manutencao",
-    scheduled_at: new Date(input.scheduled_at).toISOString(),
+    scheduled_at: scheduledAt.toISOString(),
     status: input.status,
     notes: input.notes?.trim() || null,
   };
+}
+
+async function ensureNoAppointmentConflict(scheduledAt: string, ignoreAppointmentId?: string) {
+  const userId = await getAuthenticatedUserId();
+  let query = supabase
+    .from("appointments")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("scheduled_at", scheduledAt)
+    .neq("status", "canceled");
+
+  if (ignoreAppointmentId) query = query.neq("id", ignoreAppointmentId);
+
+  const { count, error } = await query;
+  if (error) throwSupabaseError(error, "Erro ao validar horário do atendimento.");
+  if ((count ?? 0) > 0) {
+    throw new Error("Já existe atendimento nesse horário. Escolha outro horário.");
+  }
 }
 
 export function getAppointmentStatusLabel(status: AppointmentStatus | string) {
@@ -91,10 +118,15 @@ export async function listClientAppointments(clientId: string): Promise<Appointm
 
 export async function createAppointment(input: AppointmentInput): Promise<Appointment> {
   const userId = await getAuthenticatedUserId();
+  const normalized = normalize(input);
+
+  if (normalized.status !== "canceled") {
+    await ensureNoAppointmentConflict(normalized.scheduled_at);
+  }
 
   const { data, error } = await supabase
     .from("appointments")
-    .insert({ user_id: userId, ...normalize(input) })
+    .insert({ user_id: userId, ...normalized })
     .select("*, client:clients(id,name,phone)")
     .single();
   if (error) throwSupabaseError(error, "Erro ao criar atendimento.");
@@ -102,9 +134,15 @@ export async function createAppointment(input: AppointmentInput): Promise<Appoin
 }
 
 export async function updateAppointment(id: string, input: AppointmentInput): Promise<Appointment> {
+  const normalized = normalize(input);
+
+  if (normalized.status !== "canceled") {
+    await ensureNoAppointmentConflict(normalized.scheduled_at, id);
+  }
+
   const { data, error } = await supabase
     .from("appointments")
-    .update(normalize(input))
+    .update(normalized)
     .eq("id", id)
     .select("*, client:clients(id,name,phone)")
     .single();
@@ -124,6 +162,18 @@ export async function updateAppointmentStatus(
     .single();
   if (error) throwSupabaseError(error, "Erro ao atualizar status do atendimento.");
   return data as Appointment;
+}
+
+export async function listUpcomingAppointments(limit = 5): Promise<Appointment[]> {
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("*, client:clients(id,name,phone)")
+    .eq("status", "scheduled")
+    .gte("scheduled_at", new Date().toISOString())
+    .order("scheduled_at", { ascending: true })
+    .limit(limit);
+  if (error) throwSupabaseError(error, "Erro ao carregar próximos atendimentos.");
+  return (data ?? []) as Appointment[];
 }
 
 export async function countTodayAppointments(): Promise<number> {
