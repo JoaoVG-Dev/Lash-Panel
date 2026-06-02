@@ -15,8 +15,14 @@ dist-ssr
 .tanstack/**
 .nitro
 supabase/.temp/
-*.local
 .env
+.env.local
+.env..local
+.env.production
+.env.development
+.env.test
+.env.backup
+*.local
 
 # Wrangler / Cloudflare
 .wrangler/
