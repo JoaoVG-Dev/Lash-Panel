@@ -148,7 +148,7 @@ function ClientDetailPage() {
 
           <MaintenanceStatusSection clientId={client.id} />
 
-          <AnamnesisSection clientId={client.id} />
+          <AnamnesisSection clientId={client.id} clientName={client.name} phone={client.phone} />
 
           <ClientAppointmentsSection clientId={client.id} />
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FilePenLine } from "lucide-react";
+import { Copy, FilePenLine, LinkIcon, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,30 +16,35 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  ANAMNESIS_QUESTIONS,
   EMPTY_ANAMNESIS_ANSWERS,
   getClientAnamnesis,
   saveClientAnamnesis,
   type AnamnesisAnswers,
 } from "@/lib/anamnesis-api";
-
-type BooleanAnamnesisKey = Exclude<keyof AnamnesisAnswers, "additional_notes">;
-
-const QUESTIONS: Array<{ key: BooleanAnamnesisKey; label: string }> = [
-  { key: "uses_contact_lenses", label: "Usa lentes de contato?" },
-  { key: "has_allergy", label: "Possui alguma alergia?" },
-  { key: "glue_or_cosmetic_allergy", label: "Tem alergia a cola ou cosméticos?" },
-  { key: "recent_eye_procedure", label: "Fez procedimento recente nos olhos?" },
-  { key: "pregnant", label: "Está grávida?" },
-  { key: "eye_sensitivity", label: "Tem sensibilidade ocular?" },
-  { key: "uses_medication", label: "Usa algum medicamento?" },
-];
+import {
+  buildAnamnesisLinkMessage,
+  buildPublicAnamnesisUrl,
+  canSendAnamnesisLinkByWhatsApp,
+  createAnamnesisPublicToken,
+  getLatestAnamnesisPublicToken,
+} from "@/lib/anamnesis-public-api";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-api";
 
 function formatDate(value: string | null) {
   if (!value) return "-";
   return new Intl.DateTimeFormat("pt-BR").format(new Date(value));
 }
 
-export function AnamnesisSection({ clientId }: { clientId: string }) {
+export function AnamnesisSection({
+  clientId,
+  clientName,
+  phone,
+}: {
+  clientId: string;
+  clientName: string;
+  phone: string;
+}) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [answers, setAnswers] = useState<AnamnesisAnswers>(EMPTY_ANAMNESIS_ANSWERS);
@@ -47,6 +52,11 @@ export function AnamnesisSection({ clientId }: { clientId: string }) {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["anamnesis", clientId],
     queryFn: () => getClientAnamnesis(clientId),
+  });
+
+  const { data: publicToken, isLoading: isLoadingToken } = useQuery({
+    queryKey: ["anamnesis-public-token", clientId],
+    queryFn: () => getLatestAnamnesisPublicToken(clientId),
   });
 
   useEffect(() => {
@@ -67,6 +77,17 @@ export function AnamnesisSection({ clientId }: { clientId: string }) {
     },
   });
 
+  const tokenMutation = useMutation({
+    mutationFn: () => createAnamnesisPublicToken(clientId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["anamnesis-public-token", clientId] });
+      toast.success("Link de anamnese gerado");
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar link de anamnese");
+    },
+  });
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!answers.accepted_terms) {
@@ -74,6 +95,38 @@ export function AnamnesisSection({ clientId }: { clientId: string }) {
       return;
     }
     mutation.mutate(answers);
+  };
+
+  const anamnesisUrl = publicToken ? buildPublicAnamnesisUrl(publicToken.token) : null;
+
+  const handleCopyLink = async () => {
+    if (!anamnesisUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(anamnesisUrl);
+      toast.success("Link copiado");
+    } catch {
+      toast.error("Não foi possível copiar o link automaticamente.");
+    }
+  };
+
+  const handleOpenWhatsApp = () => {
+    if (!anamnesisUrl) return;
+
+    if (!canSendAnamnesisLinkByWhatsApp(phone)) {
+      toast.error("Cadastre um telefone com DDD para enviar pelo WhatsApp.");
+      return;
+    }
+
+    try {
+      window.open(
+        buildWhatsAppUrl(phone, buildAnamnesisLinkMessage(clientName, anamnesisUrl)),
+        "_blank",
+        "noopener,noreferrer",
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Telefone inválido para WhatsApp.");
+    }
   };
 
   return (
@@ -108,6 +161,61 @@ export function AnamnesisSection({ clientId }: { clientId: string }) {
             <FilePenLine className="mr-1 h-4 w-4" />
             {data ? "Editar anamnese" : "Preencher anamnese"}
           </Button>
+
+          <div className="rounded-lg border bg-background p-3">
+            <div className="flex items-start gap-2">
+              <LinkIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">Link para a cliente preencher</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Gere um link seguro para a cliente preencher a anamnese sem acessar o painel.
+                </p>
+              </div>
+            </div>
+
+            {anamnesisUrl && (
+              <div className="mt-3 rounded-md bg-muted p-2 text-xs text-muted-foreground">
+                <p className="break-all">{anamnesisUrl}</p>
+                <p className="mt-1">Expira em {formatDate(publicToken.expires_at)}.</p>
+              </div>
+            )}
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <Button
+                type="button"
+                className="h-11"
+                variant={anamnesisUrl ? "outline" : "default"}
+                onClick={() => tokenMutation.mutate()}
+                disabled={tokenMutation.isPending || isLoadingToken}
+              >
+                {tokenMutation.isPending
+                  ? "Gerando..."
+                  : anamnesisUrl
+                    ? "Gerar novo"
+                    : "Gerar link"}
+              </Button>
+              <Button
+                type="button"
+                className="h-11"
+                variant="outline"
+                onClick={handleCopyLink}
+                disabled={!anamnesisUrl}
+              >
+                <Copy className="mr-1 h-4 w-4" />
+                Copiar
+              </Button>
+              <Button
+                type="button"
+                className="h-11"
+                variant="outline"
+                onClick={handleOpenWhatsApp}
+                disabled={!anamnesisUrl}
+              >
+                <MessageCircle className="mr-1 h-4 w-4" />
+                WhatsApp
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -119,7 +227,7 @@ export function AnamnesisSection({ clientId }: { clientId: string }) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-3">
-              {QUESTIONS.map((question) => (
+              {ANAMNESIS_QUESTIONS.map((question) => (
                 <CheckboxRow
                   key={question.key}
                   label={question.label}

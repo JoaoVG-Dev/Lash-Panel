@@ -14,6 +14,18 @@ export type AnamnesisAnswers = {
   accepted_terms: boolean;
 };
 
+export type BooleanAnamnesisKey = Exclude<keyof AnamnesisAnswers, "additional_notes">;
+
+export const ANAMNESIS_QUESTIONS: Array<{ key: BooleanAnamnesisKey; label: string }> = [
+  { key: "uses_contact_lenses", label: "Usa lentes de contato?" },
+  { key: "has_allergy", label: "Possui alguma alergia?" },
+  { key: "glue_or_cosmetic_allergy", label: "Tem alergia a cola ou cosméticos?" },
+  { key: "recent_eye_procedure", label: "Fez procedimento recente nos olhos?" },
+  { key: "pregnant", label: "Está grávida?" },
+  { key: "eye_sensitivity", label: "Tem sensibilidade ocular?" },
+  { key: "uses_medication", label: "Usa algum medicamento?" },
+];
+
 export type ClientAnamnesis = {
   id: string;
   user_id: string;
