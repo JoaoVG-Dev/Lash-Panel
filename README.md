@@ -98,6 +98,7 @@ No Windows PowerShell, prefira salvar a saída em UTF-8 se o redirecionamento ge
 - Onboarding inicial para configurar perfil profissional e dados do negócio.
 - CRUD de clientes com busca por nome e telefone.
 - Produtos com tipos como cola, fios, removedor, primer, cleanser e outros.
+- Marcas de produtos cadastradas pelo usuário, com seleção por dropdown no cadastro de produto.
 - Ficha técnica vinculada à cliente, com múltiplos tamanhos de fio e cola cadastrada.
 - Configurações de manutenção, horários de atendimento e mensagens padrão.
 - Anamnese interna vinculada à cliente.
@@ -122,6 +123,12 @@ Templates aceitam variáveis:
 ```
 
 Cada abertura manual é registrada em `whatsapp_message_logs` com status `manual_opened`.
+
+## Produtos e Marcas
+
+As marcas são gerenciadas dentro da tela de produtos. A profissional pode criar, editar e inativar marcas, e o cadastro de produto usa um dropdown com as marcas ativas. Se a marca ainda não existir, ela pode ser criada diretamente no modal do produto pela opção `+ Criar nova marca`.
+
+Produtos antigos com `brand` em texto livre são migrados para `product_brands` pela migration `add_product_brands`; o campo `brand` permanece apenas como compatibilidade temporária.
 
 ## Deploy na Vercel
 
