@@ -1,8 +1,10 @@
 import { addDays, differenceInCalendarDays, isAfter, isBefore, parseISO } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 import { listClients } from "@/lib/clients-api";
 import { getUserSettings } from "@/lib/settings-api";
 import type { UserSettingsInput } from "@/lib/settings-api";
-import { listTechnicalRecords, type TechnicalRecord } from "@/lib/technical-records-api";
+import { throwSupabaseError } from "@/lib/supabase-errors";
+import type { TechnicalRecord } from "@/lib/technical-records-api";
 
 export type MaintenanceStatusKey = "no_record" | "on_track" | "upcoming" | "overdue";
 
@@ -24,6 +26,13 @@ function startOfToday(referenceDate = new Date()) {
   const today = new Date(referenceDate);
   today.setHours(0, 0, 0, 0);
   return today;
+}
+
+function normalizeMaintenanceRecord(record: TechnicalRecord): TechnicalRecord {
+  return {
+    ...record,
+    maintenance_days: Number(record.maintenance_days ?? 21),
+  };
 }
 
 export function getMaintenanceDueDate(record: TechnicalRecord | null | undefined) {
@@ -96,19 +105,34 @@ export function formatMaintenanceDate(date: Date | null) {
 }
 
 export async function listMaintenanceOverview(): Promise<MaintenanceOverviewItem[]> {
-  const [settings, clients] = await Promise.all([getUserSettings(), listClients()]);
-  const rows = await Promise.all(
-    clients.map(async (client) => {
-      const records = await listTechnicalRecords(client.id);
-      return {
-        clientId: client.id,
-        clientName: client.name,
-        status: calculateMaintenanceStatus(records[0] ?? null, settings),
-      };
-    }),
-  );
+  const [settings, clients, recordsResult] = await Promise.all([
+    getUserSettings(),
+    listClients(),
+    supabase
+      .from("client_technical_records")
+      .select("*")
+      .order("application_date", { ascending: false })
+      .order("created_at", { ascending: false }),
+  ]);
 
-  return rows
+  if (recordsResult.error) {
+    throwSupabaseError(recordsResult.error, "Erro ao carregar fichas técnicas.");
+  }
+
+  const latestRecordByClient = new Map<string, TechnicalRecord>();
+
+  for (const record of (recordsResult.data ?? []) as TechnicalRecord[]) {
+    if (!latestRecordByClient.has(record.client_id)) {
+      latestRecordByClient.set(record.client_id, normalizeMaintenanceRecord(record));
+    }
+  }
+
+  return clients
+    .map((client) => ({
+      clientId: client.id,
+      clientName: client.name,
+      status: calculateMaintenanceStatus(latestRecordByClient.get(client.id) ?? null, settings),
+    }))
     .filter((item) => item.status.key === "upcoming" || item.status.key === "overdue")
     .sort((a, b) => {
       const aTime = a.status.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;

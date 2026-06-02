@@ -36,6 +36,14 @@ export type ClientAnamnesis = {
   updated_at: string;
 };
 
+export type PendingAnamnesisClient = {
+  id: string;
+  name: string;
+  phone: string;
+  status: string;
+  created_at: string;
+};
+
 export const EMPTY_ANAMNESIS_ANSWERS: AnamnesisAnswers = {
   uses_contact_lenses: false,
   has_allergy: false,
@@ -95,4 +103,31 @@ export async function saveClientAnamnesis(
 
   if (error) throwSupabaseError(error, "Erro ao salvar anamnese.");
   return normalizeRecord(data);
+}
+
+export async function listClientsWithPendingAnamnesis(
+  limit = 5,
+): Promise<PendingAnamnesisClient[]> {
+  const [clientsResult, anamnesisResult] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("id,name,phone,status,created_at")
+      .eq("status", "active")
+      .order("created_at", { ascending: false }),
+    supabase.from("client_anamnesis").select("client_id"),
+  ]);
+
+  if (clientsResult.error) {
+    throwSupabaseError(clientsResult.error, "Erro ao carregar clientes.");
+  }
+
+  if (anamnesisResult.error) {
+    throwSupabaseError(anamnesisResult.error, "Erro ao carregar anamneses.");
+  }
+
+  const filledClientIds = new Set((anamnesisResult.data ?? []).map((item) => item.client_id));
+
+  return ((clientsResult.data ?? []) as PendingAnamnesisClient[])
+    .filter((client) => !filledClientIds.has(client.id))
+    .slice(0, limit);
 }

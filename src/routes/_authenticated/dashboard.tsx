@@ -1,12 +1,29 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Bell, CalendarCheck, Package, Users, type LucideIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  CalendarCheck,
+  CalendarClock,
+  FileQuestion,
+  Package,
+  Plus,
+  Send,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageEmpty } from "@/components/page-empty";
-import { countTodayAppointments } from "@/lib/appointments-api";
-import { countClients } from "@/lib/clients-api";
+import {
+  countTodayAppointments,
+  getAppointmentTypeLabel,
+  listUpcomingAppointments,
+  type Appointment,
+} from "@/lib/appointments-api";
+import { listClientsWithPendingAnamnesis, type PendingAnamnesisClient } from "@/lib/anamnesis-api";
+import { countActiveClients } from "@/lib/clients-api";
 import {
   formatMaintenanceDate,
   listMaintenanceOverview,
@@ -22,7 +39,7 @@ import {
 } from "@/lib/products-api";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Início — Lash Manager" }] }),
+  head: () => ({ meta: [{ title: "Início - Lash Manager" }] }),
   component: DashboardPage,
 });
 
@@ -33,10 +50,17 @@ const MAINTENANCE_BADGES: Record<MaintenanceStatusKey, "default" | "secondary" |
   overdue: "destructive",
 };
 
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
 function DashboardPage() {
-  const { data: clientCount, isLoading: isLoadingClients } = useQuery({
-    queryKey: ["clients", "count"],
-    queryFn: countClients,
+  const { data: activeClientCount, isLoading: isLoadingClients } = useQuery({
+    queryKey: ["clients", "active-count"],
+    queryFn: countActiveClients,
     refetchOnMount: "always",
   });
 
@@ -45,9 +69,19 @@ function DashboardPage() {
     queryFn: countTodayAppointments,
   });
 
+  const { data: upcomingAppointments, isLoading: isLoadingUpcomingAppointments } = useQuery({
+    queryKey: ["appointments", "upcoming"],
+    queryFn: () => listUpcomingAppointments(5),
+  });
+
   const { data: maintenanceOverview, isLoading: isLoadingMaintenance } = useQuery({
     queryKey: ["maintenance", "overview"],
     queryFn: listMaintenanceOverview,
+  });
+
+  const { data: pendingAnamnesis, isLoading: isLoadingPendingAnamnesis } = useQuery({
+    queryKey: ["anamnesis", "pending-clients"],
+    queryFn: () => listClientsWithPendingAnamnesis(5),
   });
 
   const { data: products, isLoading: isLoadingProducts } = useQuery({
@@ -63,8 +97,8 @@ function DashboardPage() {
 
   const cards = [
     {
-      label: "Clientes",
-      value: isLoadingClients ? "..." : String(clientCount ?? 0),
+      label: "Clientes ativas",
+      value: isLoadingClients ? "..." : String(activeClientCount ?? 0),
       icon: Users,
     },
     {
@@ -92,14 +126,51 @@ function DashboardPage() {
         ))}
       </section>
 
-      <section className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-foreground">Próximas manutenções</h2>
-          <Button asChild variant="link" className="h-auto p-0 text-xs">
-            <Link to="/clientes">Clientes</Link>
-          </Button>
+      <section className="rounded-xl border bg-card p-4">
+        <h2 className="text-sm font-semibold text-foreground">Ações rápidas</h2>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <QuickAction to="/clientes" icon={Plus} label="Nova cliente" />
+          <QuickAction to="/atendimentos" icon={CalendarCheck} label="Novo atendimento" />
+          <QuickAction to="/produtos" icon={Package} label="Novo produto" />
+          <QuickAction to="/clientes" icon={Send} label="Enviar anamnese" />
         </div>
+      </section>
 
+      <DashboardSection title="Próximos atendimentos" actionLabel="Agenda" actionTo="/atendimentos">
+        {!isLoadingUpcomingAppointments && (upcomingAppointments ?? []).length === 0 && (
+          <PageEmpty
+            title="Nenhum atendimento futuro"
+            description="Os próximos horários agendados aparecerão aqui."
+          />
+        )}
+
+        {(upcomingAppointments ?? []).length > 0 && (
+          <ul className="space-y-2">
+            {(upcomingAppointments ?? []).map((appointment) => (
+              <UpcomingAppointmentRow key={appointment.id} appointment={appointment} />
+            ))}
+          </ul>
+        )}
+      </DashboardSection>
+
+      <DashboardSection title="Anamneses pendentes" actionLabel="Clientes" actionTo="/clientes">
+        {!isLoadingPendingAnamnesis && (pendingAnamnesis ?? []).length === 0 && (
+          <PageEmpty
+            title="Nenhuma anamnese pendente"
+            description="Clientes ativas sem anamnese preenchida aparecerão aqui."
+          />
+        )}
+
+        {(pendingAnamnesis ?? []).length > 0 && (
+          <ul className="space-y-2">
+            {(pendingAnamnesis ?? []).map((client) => (
+              <PendingAnamnesisRow key={client.id} client={client} />
+            ))}
+          </ul>
+        )}
+      </DashboardSection>
+
+      <DashboardSection title="Próximas manutenções" actionLabel="Clientes" actionTo="/clientes">
         {!isLoadingMaintenance && (maintenanceOverview ?? []).length === 0 && (
           <PageEmpty
             title="Nenhuma manutenção próxima"
@@ -126,16 +197,9 @@ function DashboardPage() {
             ))}
           </ul>
         )}
-      </section>
+      </DashboardSection>
 
-      <section className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-foreground">Produtos com alerta</h2>
-          <Button asChild variant="link" className="h-auto p-0 text-xs">
-            <Link to="/produtos">Estoque</Link>
-          </Button>
-        </div>
-
+      <DashboardSection title="Produtos com alerta" actionLabel="Estoque" actionTo="/produtos">
         {!isLoadingProducts && alertProducts.length === 0 && (
           <PageEmpty
             title="Nenhum produto em alerta"
@@ -150,7 +214,7 @@ function DashboardPage() {
             ))}
           </ul>
         )}
-      </section>
+      </DashboardSection>
     </div>
   );
 }
@@ -175,6 +239,90 @@ function MetricCard({
   );
 }
 
+function QuickAction({
+  to,
+  icon: Icon,
+  label,
+}: {
+  to: "/clientes" | "/atendimentos" | "/produtos";
+  icon: LucideIcon;
+  label: string;
+}) {
+  return (
+    <Button asChild variant="outline" className="h-12 justify-start">
+      <Link to={to}>
+        <Icon className="mr-2 h-4 w-4" />
+        {label}
+      </Link>
+    </Button>
+  );
+}
+
+function DashboardSection({
+  title,
+  actionLabel,
+  actionTo,
+  children,
+}: {
+  title: string;
+  actionLabel: string;
+  actionTo: "/clientes" | "/atendimentos" | "/produtos";
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        <Button asChild variant="link" className="h-auto p-0 text-xs">
+          <Link to={actionTo}>{actionLabel}</Link>
+        </Button>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function UpcomingAppointmentRow({ appointment }: { appointment: Appointment }) {
+  return (
+    <li className="rounded-xl border bg-card p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-foreground">
+            {appointment.client?.name ?? "Cliente"}
+          </p>
+          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+            <CalendarClock className="h-3 w-3" />
+            {getAppointmentTypeLabel(appointment.appointment_type)} -{" "}
+            {formatDateTime(appointment.scheduled_at)}
+          </p>
+        </div>
+        <Badge variant="secondary">Agendado</Badge>
+      </div>
+    </li>
+  );
+}
+
+function PendingAnamnesisRow({ client }: { client: PendingAnamnesisClient }) {
+  return (
+    <li className="rounded-xl border bg-card p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-foreground">{client.name}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {client.phone || "Telefone não informado"}
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm" className="h-9 shrink-0">
+          <Link to="/clientes/$id" params={{ id: client.id }}>
+            <FileQuestion className="mr-1 h-4 w-4" />
+            Abrir
+          </Link>
+        </Button>
+      </div>
+    </li>
+  );
+}
+
 function ProductAlertRow({ product }: { product: Product }) {
   const alert = getProductAlert(product);
 
@@ -185,7 +333,7 @@ function ProductAlertRow({ product }: { product: Product }) {
           <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
           <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
             <Package className="h-3 w-3" />
-            {getProductTypeLabel(product.product_type)} • {product.quantity} {product.unit}
+            {getProductTypeLabel(product.product_type)} - {product.quantity} {product.unit}
           </p>
         </div>
         <ProductAlertBadge alert={alert} />

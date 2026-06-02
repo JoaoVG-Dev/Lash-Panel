@@ -89,3 +89,12 @@ export async function countClients(): Promise<number> {
   if (error) throwSupabaseError(error, "Erro ao contar clientes.");
   return count ?? 0;
 }
+
+export async function countActiveClients(): Promise<number> {
+  const { count, error } = await supabase
+    .from("clients")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "active");
+  if (error) throwSupabaseError(error, "Erro ao contar clientes ativas.");
+  return count ?? 0;
+}
