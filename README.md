@@ -31,7 +31,7 @@ npm run preview
 
 ## Ambiente
 
-Copie o exemplo e preencha as chaves do Supabase:
+Copie o exemplo e preencha as chaves públicas do Supabase:
 
 ```bash
 cp .env.example .env.local
@@ -43,19 +43,23 @@ No Windows PowerShell:
 Copy-Item .env.example .env.local
 ```
 
-Variáveis esperadas:
+Variáveis usadas pelo frontend:
 
 ```bash
 VITE_SUPABASE_URL=
 VITE_SUPABASE_PUBLISHABLE_KEY=
+```
+
+Aliases compatíveis usados em alguns contextos de build/CLI:
+
+```bash
 SUPABASE_URL=
 SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` podem ser usados no frontend.
 
-`SUPABASE_SERVICE_ROLE_KEY` nunca deve ir para o frontend, GitHub, Vercel pública ou ZIP compartilhado. Se a service role já foi compartilhada fora do ambiente local seguro, rotacione a chave no Supabase.
+`SUPABASE_SERVICE_ROLE_KEY` nunca deve ir para o frontend, GitHub, Vercel pública ou ZIP compartilhado. Use service role somente em backend seguro, scripts locais controlados ou automações privadas. Se a service role já foi compartilhada fora de um ambiente local seguro, rotacione a chave no Supabase.
 
 Arquivos `.env`, `.env.local` e variações de ambiente não devem ser versionados. O único arquivo de ambiente rastreado deve ser `.env.example`.
 
@@ -88,22 +92,68 @@ npx supabase gen types typescript --project-id dsexdxcqvmfvlivulxev --schema pub
 
 No Windows PowerShell, prefira salvar a saída em UTF-8 se o redirecionamento gerar arquivo UTF-16.
 
-## Fluxo MVP
+## Fluxo do MVP
 
 - Autenticação por Supabase Auth.
+- Onboarding inicial para configurar perfil profissional e dados do negócio.
 - CRUD de clientes com busca por nome e telefone.
 - Produtos com tipos como cola, fios, removedor, primer, cleanser e outros.
 - Ficha técnica vinculada à cliente, com múltiplos tamanhos de fio e cola cadastrada.
-- Configurações de manutenção e mensagens padrão.
-- Anamnese vinculada à cliente.
-- Atendimentos com status agendado, concluído, cancelado e falta.
-- WhatsApp manual via `wa.me`, com log de abertura manual.
-- Dashboard com total de clientes, atendimentos do dia, manutenções próximas e produtos em alerta.
+- Configurações de manutenção, horários de atendimento e mensagens padrão.
+- Anamnese interna vinculada à cliente.
+- Link público de anamnese por token seguro, com expiração e preenchimento sem login.
+- Atendimentos com filtros por período/status, reagendamento, conclusão, cancelamento e falta.
+- WhatsApp manual via `wa.me`, com templates e log `manual_opened`.
+- Dashboard com clientes ativas, atendimentos de hoje, próximas manutenções, produtos em alerta, próximos atendimentos e anamneses pendentes.
+
+## WhatsApp Manual
+
+O app não envia mensagens automaticamente nesta fase. Os botões abrem o WhatsApp via `wa.me` com mensagem pronta; a profissional confirma o envio na conversa.
+
+Templates aceitam variáveis:
+
+```txt
+{nome}
+{profissional}
+{negocio}
+{data}
+{horario}
+{link_anamnese}
+```
+
+Cada abertura manual é registrada em `whatsapp_message_logs` com status `manual_opened`.
+
+## Deploy na Vercel
+
+Configuração sugerida:
+
+- Root directory: raiz do repositório.
+- Install command: `npm install`
+- Build command: `npm run build`
+- Output: padrão do Vite/TanStack Start gerado em `dist`.
+
+Variáveis de ambiente necessárias na Vercel:
+
+```bash
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-publica
+```
+
+Não configure `SUPABASE_SERVICE_ROLE_KEY` em ambientes públicos de frontend.
+
+No Supabase Auth, adicione as URLs de redirect da Vercel:
+
+```txt
+https://seu-dominio.vercel.app
+https://seu-dominio.vercel.app/login
+```
+
+Em previews da Vercel, adicione também os domínios de preview que forem usados em QA.
 
 ## Roadmap
 
-- Link público para cliente preencher anamnese.
-- Agenda mais completa com calendário.
+- Agenda em calendário mensal/semanal.
 - Histórico avançado de manutenções.
 - Relatórios de estoque e consumo de produtos.
+- Link público de agendamento.
 - Integração real de WhatsApp por backend seguro, sem tokens no frontend.
