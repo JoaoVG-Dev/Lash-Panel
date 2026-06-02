@@ -8,6 +8,50 @@ export type Database = {
   };
   public: {
     Tables: {
+      anamnesis_public_tokens: {
+        Row: {
+          client_id: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          revoked_at: string | null;
+          token: string;
+          updated_at: string;
+          used_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          client_id: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          revoked_at?: string | null;
+          token?: string;
+          updated_at?: string;
+          used_at?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          client_id?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          revoked_at?: string | null;
+          token?: string;
+          updated_at?: string;
+          used_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "anamnesis_public_tokens_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       appointments: {
         Row: {
           appointment_type: string;
@@ -264,37 +308,70 @@ export type Database = {
       };
       user_settings: {
         Row: {
+          anamnesis_link_message: string;
+          appointment_confirmation_message: string;
+          business_description: string | null;
+          business_name: string | null;
           cancellation_message: string;
+          closing_time: string;
           created_at: string;
           default_whatsapp_message: string;
           id: string;
+          instagram: string | null;
           maintenance_days_default: number;
+          onboarding_completed_at: string | null;
+          opening_time: string;
+          professional_name: string | null;
           reminder_days_before: number;
           schedule_reminder_message: string;
           updated_at: string;
           user_id: string;
+          whatsapp_phone: string | null;
+          working_days: string[];
         };
         Insert: {
+          anamnesis_link_message?: string;
+          appointment_confirmation_message?: string;
+          business_description?: string | null;
+          business_name?: string | null;
           cancellation_message?: string;
+          closing_time?: string;
           created_at?: string;
           default_whatsapp_message?: string;
           id?: string;
+          instagram?: string | null;
           maintenance_days_default?: number;
+          onboarding_completed_at?: string | null;
+          opening_time?: string;
+          professional_name?: string | null;
           reminder_days_before?: number;
           schedule_reminder_message?: string;
           updated_at?: string;
           user_id?: string;
+          whatsapp_phone?: string | null;
+          working_days?: string[];
         };
         Update: {
+          anamnesis_link_message?: string;
+          appointment_confirmation_message?: string;
+          business_description?: string | null;
+          business_name?: string | null;
           cancellation_message?: string;
+          closing_time?: string;
           created_at?: string;
           default_whatsapp_message?: string;
           id?: string;
+          instagram?: string | null;
           maintenance_days_default?: number;
+          onboarding_completed_at?: string | null;
+          opening_time?: string;
+          professional_name?: string | null;
           reminder_days_before?: number;
           schedule_reminder_message?: string;
           updated_at?: string;
           user_id?: string;
+          whatsapp_phone?: string | null;
+          working_days?: string[];
         };
         Relationships: [];
       };
@@ -306,13 +383,16 @@ export type Database = {
           error_message: string | null;
           id: string;
           message: string;
+          message_body: string | null;
           message_type: string;
+          opened_at: string | null;
           phone: string;
           provider_message_id: string | null;
           scheduled_for: string | null;
           sent_at: string | null;
           status: string;
           template_id: string | null;
+          template_type: string | null;
           updated_at: string;
           user_id: string;
         };
@@ -323,13 +403,16 @@ export type Database = {
           error_message?: string | null;
           id?: string;
           message: string;
+          message_body?: string | null;
           message_type: string;
+          opened_at?: string | null;
           phone: string;
           provider_message_id?: string | null;
           scheduled_for?: string | null;
           sent_at?: string | null;
           status?: string;
           template_id?: string | null;
+          template_type?: string | null;
           updated_at?: string;
           user_id?: string;
         };
@@ -340,13 +423,16 @@ export type Database = {
           error_message?: string | null;
           id?: string;
           message?: string;
+          message_body?: string | null;
           message_type?: string;
+          opened_at?: string | null;
           phone?: string;
           provider_message_id?: string | null;
           scheduled_for?: string | null;
           sent_at?: string | null;
           status?: string;
           template_id?: string | null;
+          template_type?: string | null;
           updated_at?: string;
           user_id?: string;
         };
@@ -412,7 +498,22 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      get_public_anamnesis_token: {
+        Args: { p_token: string };
+        Returns: {
+          business_name: string;
+          client_name: string;
+          expires_at: string;
+          professional_name: string;
+          revoked_at: string;
+          token_id: string;
+          used_at: string;
+        }[];
+      };
+      submit_public_anamnesis: {
+        Args: { p_answers: Json; p_token: string };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ProfessionalSettingsFields } from "@/components/professional-settings-fields";
@@ -8,18 +8,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   DEFAULT_SETTINGS,
   getUserSettings,
+  isOnboardingComplete,
   isProfessionalProfileComplete,
   saveUserSettings,
   settingsToInput,
   type UserSettingsInput,
 } from "@/lib/settings-api";
 
-export const Route = createFileRoute("/_authenticated/configuracoes")({
-  head: () => ({ meta: [{ title: "Configurações — Lash Manager" }] }),
-  component: ConfiguracoesPage,
+export const Route = createFileRoute("/_authenticated/onboarding")({
+  head: () => ({ meta: [{ title: "Primeira configuração — Lash Manager" }] }),
+  component: OnboardingPage,
 });
 
-function ConfiguracoesPage() {
+function OnboardingPage() {
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [form, setForm] = useState<UserSettingsInput>({
     ...DEFAULT_SETTINGS,
@@ -37,18 +39,18 @@ function ConfiguracoesPage() {
   }, [data]);
 
   const mutation = useMutation({
-    mutationFn: (input: UserSettingsInput) =>
-      saveUserSettings(input, {
-        completeOnboarding: Boolean(data?.onboarding_completed_at),
-      }),
+    mutationFn: (input: UserSettingsInput) => saveUserSettings(input, { completeOnboarding: true }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["settings"] });
-      toast.success("Configurações salvas");
+      toast.success("Perfil configurado");
+      navigate({ to: "/dashboard", replace: true });
     },
     onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar configurações");
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar perfil");
     },
   });
+
+  if (isOnboardingComplete(data)) return <Navigate to="/dashboard" replace />;
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -61,6 +63,13 @@ function ConfiguracoesPage() {
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold text-foreground">Configure seu perfil</h1>
+        <p className="text-sm text-muted-foreground">
+          Essas informações aparecem em links públicos, mensagens e agenda.
+        </p>
+      </div>
+
       {isLoading && (
         <div className="space-y-3">
           <Skeleton className="h-40 w-full rounded-xl" />
@@ -70,20 +79,15 @@ function ConfiguracoesPage() {
 
       {isError && (
         <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          {error instanceof Error ? error.message : "Erro ao carregar configurações."}
+          {error instanceof Error ? error.message : "Erro ao carregar perfil."}
         </div>
       )}
 
       {!isLoading && !isError && (
         <>
-          <ProfessionalSettingsFields form={form} onChange={setForm} />
-
-          <Button
-            type="submit"
-            className="sticky bottom-20 z-10 h-11 w-full"
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? "Salvando..." : "Salvar"}
+          <ProfessionalSettingsFields form={form} onChange={setForm} showMessages={false} />
+          <Button type="submit" className="h-11 w-full" disabled={mutation.isPending}>
+            {mutation.isPending ? "Salvando..." : "Começar"}
           </Button>
         </>
       )}
