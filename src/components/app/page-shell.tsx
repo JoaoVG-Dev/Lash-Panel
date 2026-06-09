@@ -115,23 +115,34 @@ export function QuickActionCard({
   icon: Icon,
   children,
   className,
+  description,
 }: {
   label: string;
   icon: LucideIcon;
   children?: ReactNode;
   className?: string;
+  description?: string;
 }) {
   return (
     <div
       className={cn(
-        "flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border bg-card/85 p-3 text-center text-xs font-bold text-foreground shadow-sm transition-colors hover:border-primary/30 hover:bg-accent",
+        "group flex min-h-24 items-center gap-3 rounded-2xl border bg-card/90 p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/35 hover:bg-accent hover:shadow-md focus-within:border-primary/40",
         className,
       )}
     >
-      <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
-        <Icon className="h-4 w-4" />
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+        <Icon className="h-5 w-5" />
       </span>
-      <span className="leading-tight">{children ?? label}</span>
+      <span className="min-w-0">
+        <span className="block text-sm font-extrabold leading-tight text-foreground">
+          {children ?? label}
+        </span>
+        {description && (
+          <span className="mt-1 block text-xs font-medium leading-5 text-muted-foreground">
+            {description}
+          </span>
+        )}
+      </span>
     </div>
   );
 }

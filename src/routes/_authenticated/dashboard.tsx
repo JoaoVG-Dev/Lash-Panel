@@ -163,20 +163,24 @@ function DashboardPage() {
 
       <SectionCard
         title="Ações rápidas"
-        description="Atalhos para os fluxos mais usados no celular."
+        description="Atalhos com área de toque maior para iniciar os fluxos mais usados."
       >
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Link to="/clientes">
-            <QuickActionCard icon={Plus} label="Nova cliente" />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Link to="/clientes" className="block">
+            <QuickActionCard icon={Plus} label="Nova cliente" description="Cadastrar perfil" />
           </Link>
-          <Link to="/atendimentos">
-            <QuickActionCard icon={CalendarCheck} label="Novo atendimento" />
+          <Link to="/atendimentos" className="block">
+            <QuickActionCard
+              icon={CalendarCheck}
+              label="Novo atendimento"
+              description="Abrir agenda"
+            />
           </Link>
-          <Link to="/produtos">
-            <QuickActionCard icon={Package} label="Novo produto" />
+          <Link to="/produtos" className="block">
+            <QuickActionCard icon={Package} label="Novo produto" description="Atualizar estoque" />
           </Link>
-          <Link to="/clientes">
-            <QuickActionCard icon={Send} label="Enviar anamnese" />
+          <Link to="/clientes" className="block">
+            <QuickActionCard icon={Send} label="Enviar anamnese" description="Solicitar dados" />
           </Link>
         </div>
       </SectionCard>
