@@ -180,31 +180,26 @@
   }
 
   ::selection {
-  background: var(--color-accent);
-  color: var(--color-foreground);
-}
+    background: var(--color-accent);
+    color: var(--color-foreground);
+  }
 }
 
 @layer components {
   .app-background {
-    background: linear-gradient(
-      180deg,
-      oklch(0.99 0.012 19) 0%,
-      oklch(0.985 0.018 8) 48%,
-      oklch(0.97 0.018 24) 100%
-    );
+    background: linear-gradient(180deg, var(--color-background) 0%, var(--color-muted) 100%);
   }
 
- .beauty-card {
-  border: 1px solid var(--color-border);
-  background: var(--color-card);
-  box-shadow: 0 14px 34px oklch(0.35 0.01 45 / 0.06);
-}
+  .beauty-card {
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    box-shadow: 0 14px 34px color-mix(in oklch, var(--color-foreground) 7%, transparent);
+  }
 
   .beauty-panel {
-    border: 1px solid oklch(0.91 0.03 5);
-    background: oklch(1 0 0 / 0.86);
-    box-shadow: 0 18px 45px oklch(0.45 0.06 20 / 0.08);
+    border: 1px solid var(--color-border);
+    background: color-mix(in oklch, var(--color-card) 88%, transparent);
+    box-shadow: 0 18px 45px color-mix(in oklch, var(--color-foreground) 8%, transparent);
     backdrop-filter: blur(14px);
   }
 
@@ -216,9 +211,9 @@
   }
 
   .soft-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-primary) transparent;
-}
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary) transparent;
+  }
 
   .touch-chip {
     min-height: 2.5rem;
