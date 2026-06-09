@@ -85,10 +85,10 @@ export function StatCard({
 }) {
   const toneClasses = {
     primary: "bg-primary/12 text-primary ring-primary/15",
-    success: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    warning: "bg-amber-50 text-amber-700 ring-amber-100",
-    danger: "bg-rose-50 text-rose-700 ring-rose-100",
-    lavender: "bg-violet-50 text-violet-700 ring-violet-100",
+    success: "bg-accent text-accent-foreground ring-border",
+    warning: "bg-secondary text-secondary-foreground ring-border",
+    danger: "bg-destructive/10 text-destructive ring-destructive/20",
+    lavender: "bg-secondary text-secondary-foreground ring-border",
   };
 
   return (
