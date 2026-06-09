@@ -136,24 +136,28 @@ function DashboardPage() {
           label="Clientes ativas"
           value={isLoadingClients ? "..." : String(activeClientCount ?? 0)}
           icon={Users}
+          helper="Base ativa do estúdio"
         />
         <StatCard
           label="Atendimentos hoje"
           value={isLoadingAppointments ? "..." : String(todayAppointments ?? 0)}
           icon={CalendarCheck}
           tone="success"
+          helper="Agenda do dia"
         />
         <StatCard
           label="Manutenções próximas"
           value={isLoadingMaintenance ? "..." : String(upcomingMaintenanceCount)}
           icon={Bell}
           tone="lavender"
+          helper="Dentro do período de lembrete"
         />
         <StatCard
           label="Produtos em alerta"
           value={isLoadingProducts ? "..." : String(alertProducts.length)}
           icon={AlertTriangle}
           tone="warning"
+          helper="Estoque ou validade"
         />
       </section>
 

@@ -73,29 +73,39 @@ export function StatCard({
   value,
   icon: Icon,
   tone = "primary",
+  helper,
 }: {
   label: string;
   value: string | number;
   icon: LucideIcon;
   tone?: "primary" | "success" | "warning" | "danger" | "lavender";
+  helper?: string;
 }) {
   const toneClasses = {
-    primary: "bg-primary/10 text-primary",
-    success: "bg-emerald-50 text-emerald-700",
-    warning: "bg-amber-50 text-amber-700",
-    danger: "bg-rose-50 text-rose-700",
-    lavender: "bg-violet-50 text-violet-700",
+    primary: "bg-primary/12 text-primary ring-primary/15",
+    success: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    warning: "bg-amber-50 text-amber-700 ring-amber-100",
+    danger: "bg-rose-50 text-rose-700 ring-rose-100",
+    lavender: "bg-violet-50 text-violet-700 ring-violet-100",
   };
 
   return (
-    <div className="beauty-card rounded-2xl p-4">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold uppercase text-muted-foreground">{label}</span>
-        <span className={cn("grid h-9 w-9 place-items-center rounded-xl", toneClasses[tone])}>
-          <Icon className="h-4 w-4" />
+    <div className="beauty-card min-h-32 rounded-2xl p-4 transition-colors hover:border-primary/25 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <span className="max-w-32 text-xs font-extrabold uppercase leading-5 text-muted-foreground">
+          {label}
+        </span>
+        <span
+          className={cn(
+            "grid h-10 w-10 shrink-0 place-items-center rounded-2xl ring-1",
+            toneClasses[tone],
+          )}
+        >
+          <Icon className="h-5 w-5" />
         </span>
       </div>
-      <p className="mt-3 text-3xl font-extrabold leading-none text-foreground">{value}</p>
+      <p className="mt-5 text-4xl font-black leading-none text-foreground tabular-nums">{value}</p>
+      {helper && <p className="mt-2 text-xs font-semibold text-muted-foreground">{helper}</p>}
     </div>
   );
 }
