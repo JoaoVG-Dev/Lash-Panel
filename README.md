@@ -136,7 +136,7 @@ O frontend segue uma estética beauty-tech premium, mobile-first, pensada para u
 
 Diretrizes atuais:
 
-- Paleta blush pink, ivory, off-white, taupe e charcoal.
+- Paleta neutra com taupe, champagne, off-white e charcoal.
 - Cards claros com borda sutil, sombra suave e estados visuais por badge/chip.
 - Botões e inputs touch-friendly.
 - Navegação inferior fixa no mobile e sidebar compacta em tablet/desktop.
