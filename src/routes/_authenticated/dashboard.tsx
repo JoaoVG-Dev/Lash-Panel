@@ -109,11 +109,11 @@ function DashboardPage() {
   );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 sm:space-y-6">
       <section className="beauty-panel overflow-hidden rounded-2xl p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-bold text-primary">
+            <p className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-extrabold text-primary">
               <Sparkles className="h-3.5 w-3.5" />
               Rotina do estúdio
             </p>
@@ -124,14 +124,46 @@ function DashboardPage() {
               Veja seus atendimentos, alertas e próximas ações para manter o dia fluindo.
             </p>
           </div>
-          <div className="hidden rounded-2xl bg-primary/10 px-4 py-3 text-right text-primary sm:block">
+          <div className="rounded-2xl border bg-card/80 px-4 py-3 text-primary shadow-sm sm:min-w-32 sm:text-right">
             <p className="text-xs font-bold uppercase">Hoje</p>
             <p className="text-2xl font-extrabold">{todayAppointments ?? 0}</p>
+            <p className="text-xs font-semibold text-muted-foreground">atendimentos</p>
           </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <DashboardSection
+        title="Próximos atendimentos"
+        description="Acompanhe os horários que pedem atenção primeiro no seu dia."
+        actionLabel="Abrir agenda"
+        actionTo="/atendimentos"
+        priority
+      >
+        {!isLoadingUpcomingAppointments && (upcomingAppointments ?? []).length === 0 && (
+          <PageEmpty
+            title="Nenhum atendimento futuro"
+            description="Quando um horário for agendado, ele aparece aqui com cliente, procedimento e data."
+            action={
+              <Button asChild size="sm">
+                <Link to="/atendimentos">
+                  <CalendarCheck className="h-4 w-4" />
+                  Agendar atendimento
+                </Link>
+              </Button>
+            }
+          />
+        )}
+
+        {(upcomingAppointments ?? []).length > 0 && (
+          <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {(upcomingAppointments ?? []).map((appointment) => (
+              <UpcomingAppointmentRow key={appointment.id} appointment={appointment} />
+            ))}
+          </ul>
+        )}
+      </DashboardSection>
+
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Clientes ativas"
           value={isLoadingClients ? "..." : String(activeClientCount ?? 0)}
@@ -187,31 +219,23 @@ function DashboardPage() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <DashboardSection
-          title="Próximos atendimentos"
-          actionLabel="Agenda"
-          actionTo="/atendimentos"
+          title="Anamneses pendentes"
+          description="Clientes que ainda precisam completar as informações antes do atendimento."
+          actionLabel="Ver clientes"
+          actionTo="/clientes"
         >
-          {!isLoadingUpcomingAppointments && (upcomingAppointments ?? []).length === 0 && (
-            <PageEmpty
-              title="Nenhum atendimento futuro"
-              description="Os próximos horários agendados aparecerão aqui."
-            />
-          )}
-
-          {(upcomingAppointments ?? []).length > 0 && (
-            <ul className="space-y-2">
-              {(upcomingAppointments ?? []).map((appointment) => (
-                <UpcomingAppointmentRow key={appointment.id} appointment={appointment} />
-              ))}
-            </ul>
-          )}
-        </DashboardSection>
-
-        <DashboardSection title="Anamneses pendentes" actionLabel="Clientes" actionTo="/clientes">
           {!isLoadingPendingAnamnesis && (pendingAnamnesis ?? []).length === 0 && (
             <PageEmpty
               title="Nenhuma anamnese pendente"
               description="Clientes ativas sem anamnese preenchida aparecerão aqui."
+              action={
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/clientes">
+                    <Send className="h-4 w-4" />
+                    Enviar anamnese
+                  </Link>
+                </Button>
+              }
             />
           )}
 
@@ -224,18 +248,31 @@ function DashboardPage() {
           )}
         </DashboardSection>
 
-        <DashboardSection title="Próximas manutenções" actionLabel="Clientes" actionTo="/clientes">
+        <DashboardSection
+          title="Próximas manutenções"
+          description="Lembretes para manter o relacionamento ativo após o procedimento."
+          actionLabel="Ver clientes"
+          actionTo="/clientes"
+        >
           {!isLoadingMaintenance && (maintenanceOverview ?? []).length === 0 && (
             <PageEmpty
               title="Nenhuma manutenção próxima"
               description="As clientes em período de lembrete aparecerão aqui."
+              action={
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/clientes">
+                    <Users className="h-4 w-4" />
+                    Abrir clientes
+                  </Link>
+                </Button>
+              }
             />
           )}
 
           {(maintenanceOverview ?? []).length > 0 && (
             <ul className="space-y-2">
               {(maintenanceOverview ?? []).slice(0, 5).map((item) => (
-                <li key={item.clientId} className="rounded-2xl border bg-card/80 p-3">
+                <li key={item.clientId} className="rounded-2xl border bg-card/85 p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold text-foreground">
@@ -253,11 +290,24 @@ function DashboardPage() {
           )}
         </DashboardSection>
 
-        <DashboardSection title="Produtos com alerta" actionLabel="Estoque" actionTo="/produtos">
+        <DashboardSection
+          title="Produtos com alerta"
+          description="Itens que merecem conferência de estoque ou validade."
+          actionLabel="Ver estoque"
+          actionTo="/produtos"
+        >
           {!isLoadingProducts && alertProducts.length === 0 && (
             <PageEmpty
               title="Nenhum produto em alerta"
               description="Validade e estoque baixo aparecerão aqui."
+              action={
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/produtos">
+                    <Package className="h-4 w-4" />
+                    Abrir estoque
+                  </Link>
+                </Button>
+              }
             />
           )}
 
@@ -276,20 +326,31 @@ function DashboardPage() {
 
 function DashboardSection({
   title,
+  description,
   actionLabel,
   actionTo,
   children,
+  priority,
 }: {
   title: string;
+  description?: string;
   actionLabel: string;
   actionTo: "/clientes" | "/atendimentos" | "/produtos";
   children: ReactNode;
+  priority?: boolean;
 }) {
   return (
     <SectionCard
       title={title}
+      description={description}
+      className={priority ? "border-primary/20 bg-card/95" : undefined}
       action={
-        <Button asChild variant="link" className="h-auto p-0 text-xs">
+        <Button
+          asChild
+          variant={priority ? "default" : "link"}
+          size={priority ? "sm" : "default"}
+          className={priority ? "" : "h-auto p-0 text-xs"}
+        >
           <Link to={actionTo}>{actionLabel}</Link>
         </Button>
       }

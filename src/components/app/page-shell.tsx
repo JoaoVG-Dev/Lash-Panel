@@ -55,10 +55,12 @@ export function SectionCard({
   return (
     <section className={cn("beauty-card rounded-2xl p-4 sm:p-5", className)}>
       {(title || description || action) && (
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            {title && <h2 className="text-base font-bold text-foreground">{title}</h2>}
-            {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+            {title && <h2 className="text-base font-extrabold text-foreground">{title}</h2>}
+            {description && (
+              <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
+            )}
           </div>
           {action && <div className="shrink-0">{action}</div>}
         </div>
