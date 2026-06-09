@@ -228,9 +228,14 @@ export function AnamnesisSection({
             </div>
 
             <CheckboxRow
-              label="Cliente aceitou o termo de responsabilidade"
+              label="Li e aceito o termo de responsabilidade."
               checked={answers.accepted_terms}
               onCheckedChange={(checked) => setAnswers({ ...answers, accepted_terms: checked })}
+            />
+            <CheckboxRow
+              label="Autorizo o registro de fotos e vídeos do procedimento e a publicação em redes sociais/plataformas da profissional."
+              checked={answers.image_authorization}
+              onCheckedChange={(checked) =>setAnswers({ ...answers, image_authorization: checked })}
             />
 
             <DialogFooter className="gap-2 sm:gap-2">

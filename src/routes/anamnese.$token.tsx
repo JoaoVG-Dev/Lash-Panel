@@ -166,6 +166,19 @@ function PublicAnamnesisPage() {
                 <ShieldCheck className="h-4 w-4 text-primary" />O link é individual e só pode ser
                 usado enquanto estiver válido.
               </p>
+              <label className="mt-4 flex items-start gap-3 text-sm">
+                <Checkbox
+                  checked={answers.image_authorization}
+                  onCheckedChange={(value) =>
+                    setAnswers({ ...answers, image_authorization: value === true })
+                  }
+                  className="mt-0.5"
+                />
+                <span>
+                  Autorizo o registro de fotos e vídeos do procedimento e a publicação em redes
+                  sociais, portfólio e demais plataformas utilizadas pela profissional.
+                </span>
+              </label>
             </section>
 
             <Button type="submit" className="h-12 w-full" disabled={mutation.isPending}>
