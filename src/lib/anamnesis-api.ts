@@ -12,6 +12,9 @@ export type AnamnesisAnswers = {
   uses_medication: boolean;
   additional_notes: string;
   accepted_terms: boolean;
+  has_glaucoma: boolean;
+  has_blepharitis: boolean;
+  image_authorization: boolean;
 };
 
 export type BooleanAnamnesisKey = Exclude<keyof AnamnesisAnswers, "additional_notes">;
@@ -24,6 +27,8 @@ export const ANAMNESIS_QUESTIONS: Array<{ key: BooleanAnamnesisKey; label: strin
   { key: "pregnant", label: "Está grávida?" },
   { key: "eye_sensitivity", label: "Tem sensibilidade ocular?" },
   { key: "uses_medication", label: "Usa algum medicamento?" },
+  { key: "has_glaucoma", label: "Possui glaucoma?" },
+  { key: "has_blepharitis", label: "Possui blefarite?" },
 ];
 
 export type ClientAnamnesis = {
@@ -54,6 +59,9 @@ export const EMPTY_ANAMNESIS_ANSWERS: AnamnesisAnswers = {
   uses_medication: false,
   additional_notes: "",
   accepted_terms: false,
+  has_glaucoma: false,
+  has_blepharitis: false,
+  image_authorization: false,
 };
 
 function normalizeAnswers(answers: Partial<AnamnesisAnswers> | null | undefined): AnamnesisAnswers {
