@@ -152,7 +152,7 @@ export function AnamnesisSection({
               </div>
             </div>
 
-            {anamnesisUrl && (
+            {publicToken && anamnesisUrl && (
               <div className="mt-3 rounded-2xl bg-secondary/70 p-3 text-xs text-muted-foreground">
                 <p className="break-all">{anamnesisUrl}</p>
                 <p className="mt-1">Expira em {formatDate(publicToken.expires_at)}.</p>
@@ -235,7 +235,9 @@ export function AnamnesisSection({
             <CheckboxRow
               label="Autorizo o registro de fotos e vídeos do procedimento e a publicação em redes sociais/plataformas da profissional."
               checked={answers.image_authorization}
-              onCheckedChange={(checked) =>setAnswers({ ...answers, image_authorization: checked })}
+              onCheckedChange={(checked) =>
+                setAnswers({ ...answers, image_authorization: checked })
+              }
             />
 
             <DialogFooter className="gap-2 sm:gap-2">

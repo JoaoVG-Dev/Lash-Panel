@@ -54,36 +54,42 @@ export type Database = {
       };
       appointments: {
         Row: {
+          amount: number | null;
           appointment_type: string;
           client_id: string;
           created_at: string;
           id: string;
           notes: string | null;
           scheduled_at: string;
+          service_id: string | null;
           status: string;
           technical_record_id: string | null;
           updated_at: string;
           user_id: string;
         };
         Insert: {
+          amount?: number | null;
           appointment_type?: string;
           client_id: string;
           created_at?: string;
           id?: string;
           notes?: string | null;
           scheduled_at: string;
+          service_id?: string | null;
           status?: string;
           technical_record_id?: string | null;
           updated_at?: string;
           user_id?: string;
         };
         Update: {
+          amount?: number | null;
           appointment_type?: string;
           client_id?: string;
           created_at?: string;
           id?: string;
           notes?: string | null;
           scheduled_at?: string;
+          service_id?: string | null;
           status?: string;
           technical_record_id?: string | null;
           updated_at?: string;
@@ -95,6 +101,13 @@ export type Database = {
             columns: ["client_id"];
             isOneToOne: false;
             referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey";
+            columns: ["service_id"];
+            isOneToOne: false;
+            referencedRelation: "services";
             referencedColumns: ["id"];
           },
           {
@@ -349,6 +362,39 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      services: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string;
+          price: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name: string;
+          price?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          price?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       user_settings: {
         Row: {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   APPOINTMENT_STATUS_OPTIONS,
-  APPOINTMENT_TYPE_OPTIONS,
   createAppointment,
   updateAppointment,
   type Appointment,
@@ -29,6 +28,7 @@ import {
   type AppointmentStatus,
 } from "@/lib/appointments-api";
 import { listClients } from "@/lib/clients-api";
+import { listServices } from "@/lib/services-api";
 
 type Props = {
   open: boolean;
@@ -54,7 +54,8 @@ function defaultScheduledAt() {
 function emptyForm(defaultClientId = ""): AppointmentInput {
   return {
     client_id: defaultClientId,
-    appointment_type: "manutencao",
+    service_id: "",
+    amount: 0,
     scheduled_at: defaultScheduledAt(),
     status: "scheduled",
     notes: "",
@@ -71,6 +72,17 @@ export function AppointmentFormDialog({ open, onOpenChange, appointment, default
     enabled: open,
   });
 
+  const { data: services } = useQuery({
+    queryKey: ["services"],
+    queryFn: listServices,
+    enabled: open,
+  });
+
+  const activeServices = useMemo(
+    () => (services ?? []).filter((service) => service.active),
+    [services],
+  );
+
   useEffect(() => {
     if (!open) return;
     setForm(
@@ -78,7 +90,8 @@ export function AppointmentFormDialog({ open, onOpenChange, appointment, default
         ? {
             client_id: appointment.client_id,
             technical_record_id: appointment.technical_record_id,
-            appointment_type: appointment.appointment_type,
+            service_id: appointment.service_id ?? "",
+            amount: appointment.amount,
             scheduled_at: toDatetimeLocal(appointment.scheduled_at),
             status: appointment.status,
             notes: appointment.notes ?? "",
@@ -107,6 +120,14 @@ export function AppointmentFormDialog({ open, onOpenChange, appointment, default
     event.preventDefault();
     if (!form.client_id) {
       toast.error("Selecione uma cliente");
+      return;
+    }
+    if (!form.service_id) {
+      toast.error("Selecione um serviço");
+      return;
+    }
+    if (!Number.isFinite(Number(form.amount)) || Number(form.amount) < 0) {
+      toast.error("Informe um valor válido");
       return;
     }
     if (!form.scheduled_at) {
@@ -143,44 +164,42 @@ export function AppointmentFormDialog({ open, onOpenChange, appointment, default
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="appointment-type">Tipo</Label>
-              <Select
-                value={form.appointment_type}
-                onValueChange={(value) => setForm({ ...form, appointment_type: value })}
-              >
-                <SelectTrigger id="appointment-type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {APPOINTMENT_TYPE_OPTIONS.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="appointment-service">Serviço</Label>
+            <Select
+              value={form.service_id}
+              onValueChange={(value) => {
+                const service = activeServices.find((item) => item.id === value);
+                setForm({
+                  ...form,
+                  service_id: value,
+                  amount: service ? service.price : form.amount,
+                });
+              }}
+            >
+              <SelectTrigger id="appointment-service">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {activeServices.map((service) => (
+                  <SelectItem key={service.id} value={service.id}>
+                    {service.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="appointment-status">Status</Label>
-              <Select
-                value={form.status}
-                onValueChange={(value) => setForm({ ...form, status: value as AppointmentStatus })}
-              >
-                <SelectTrigger id="appointment-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {APPOINTMENT_STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="appointment-amount">Valor</Label>
+            <Input
+              id="appointment-amount"
+              type="number"
+              min={0}
+              step="0.01"
+              value={form.amount}
+              onChange={(event) => setForm({ ...form, amount: Number(event.target.value || 0) })}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -191,6 +210,25 @@ export function AppointmentFormDialog({ open, onOpenChange, appointment, default
               value={form.scheduled_at}
               onChange={(event) => setForm({ ...form, scheduled_at: event.target.value })}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="appointment-status">Status</Label>
+            <Select
+              value={form.status}
+              onValueChange={(value) => setForm({ ...form, status: value as AppointmentStatus })}
+            >
+              <SelectTrigger id="appointment-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {APPOINTMENT_STATUS_OPTIONS.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1.5">

@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  formatAppointmentAmount,
+  getAppointmentServiceName,
   getAppointmentStatusLabel,
-  getAppointmentTypeLabel,
   listClientAppointments,
   type AppointmentStatus,
 } from "@/lib/appointments-api";
@@ -67,7 +68,8 @@ export function ClientAppointmentsSection({ clientId }: { clientId: string }) {
                     {formatDateTime(appointment.scheduled_at)}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {getAppointmentTypeLabel(appointment.appointment_type)}
+                    {getAppointmentServiceName(appointment)} -{" "}
+                    {formatAppointmentAmount(appointment.amount)}
                   </p>
                 </div>
                 <Badge variant={STATUS_VARIANTS[appointment.status]}>

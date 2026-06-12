@@ -21,7 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   countTodayAppointments,
-  getAppointmentTypeLabel,
+  formatAppointmentAmount,
+  getAppointmentServiceName,
   listUpcomingAppointments,
   type Appointment,
 } from "@/lib/appointments-api";
@@ -370,8 +371,10 @@ function UpcomingAppointmentRow({ appointment }: { appointment: Appointment }) {
           </p>
           <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
             <CalendarClock className="h-3.5 w-3.5" />
-            {getAppointmentTypeLabel(appointment.appointment_type)} -{" "}
             {formatDateTime(appointment.scheduled_at)}
+          </p>
+          <p className="mt-0.5 truncate text-xs font-semibold text-foreground">
+            {getAppointmentServiceName(appointment)} - {formatAppointmentAmount(appointment.amount)}
           </p>
         </div>
         <Badge variant="secondary">Agendado</Badge>

@@ -1,6 +1,14 @@
 import { createFileRoute, Link, Navigate, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarCheck, LayoutDashboard, LogOut, Package, Settings, Users } from "lucide-react";
+import {
+  CalendarCheck,
+  LayoutDashboard,
+  LogOut,
+  Package,
+  Settings,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { getUserSettings, isOnboardingComplete } from "@/lib/settings-api";
@@ -14,6 +22,7 @@ export const Route = createFileRoute("/_authenticated")({
 const navItems = [
   { to: "/dashboard", label: "Início", icon: LayoutDashboard },
   { to: "/clientes", label: "Clientes", icon: Users },
+  { to: "/servicos", label: "Serviços", icon: Sparkles },
   { to: "/produtos", label: "Produtos", icon: Package },
   { to: "/atendimentos", label: "Agenda", icon: CalendarCheck },
   { to: "/configuracoes", label: "Mais", icon: Settings },
@@ -130,7 +139,7 @@ function AuthenticatedLayout() {
             className="fixed bottom-0 left-0 right-0 z-20 border-t border-border/70 bg-card/95 shadow-2xl shadow-primary/10 backdrop-blur md:hidden"
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
           >
-            <ul className="mx-auto grid max-w-2xl grid-cols-5 px-2">
+            <ul className="mx-auto grid max-w-2xl grid-cols-6 px-2">
               {navItems.map((item) => {
                 const active = pathname.startsWith(item.to);
                 const Icon = item.icon;

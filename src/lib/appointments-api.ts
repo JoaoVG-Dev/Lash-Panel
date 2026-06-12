@@ -10,24 +10,38 @@ export type AppointmentClient = {
   phone: string;
 };
 
+export type AppointmentService = {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Appointment = {
   id: string;
   user_id: string;
   client_id: string;
   technical_record_id: string | null;
-  appointment_type: string;
+  service_id: string | null;
+  amount: number;
   scheduled_at: string;
   status: AppointmentStatus;
   notes: string | null;
   created_at: string;
   updated_at: string;
   client?: AppointmentClient | null;
+  service?: AppointmentService | null;
 };
 
 export type AppointmentInput = {
   client_id: string;
   technical_record_id?: string | null;
-  appointment_type: string;
+  service_id: string;
+  amount: number;
   scheduled_at: string;
   status: AppointmentStatus;
   notes?: string | null;
@@ -44,16 +58,30 @@ export const APPOINTMENT_STATUS_OPTIONS: Array<{ value: AppointmentStatus; label
   { value: "no_show", label: "Não compareceu" },
 ];
 
-export const APPOINTMENT_TYPE_OPTIONS = [
-  { value: "colocacao", label: "Colocação" },
-  { value: "manutencao", label: "Manutenção" },
-  { value: "retorno", label: "Retorno" },
-  { value: "avaliacao", label: "Avaliação" },
-  { value: "outro", label: "Outro" },
-];
+const APPOINTMENT_SELECT = "*, client:clients(id,name,phone), service:services(*)";
+
+function toNumber(value: unknown): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return Number(value);
+  return 0;
+}
+
+function normalizeAppointment(row: Appointment): Appointment {
+  return {
+    ...row,
+    amount: toNumber(row.amount),
+    service: row.service
+      ? {
+          ...row.service,
+          price: toNumber(row.service.price),
+        }
+      : null,
+  };
+}
 
 function normalize(input: AppointmentInput): NormalizedAppointmentInput {
   if (!input.client_id) throw new Error("Selecione uma cliente válida.");
+  if (!input.service_id) throw new Error("Selecione um serviço válido.");
   if (!input.scheduled_at) throw new Error("Informe a data e horário do atendimento.");
 
   const scheduledAt = new Date(input.scheduled_at);
@@ -61,10 +89,16 @@ function normalize(input: AppointmentInput): NormalizedAppointmentInput {
     throw new Error("Informe uma data e horário válidos para o atendimento.");
   }
 
+  const amount = Number(input.amount);
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw new Error("Valor do atendimento não pode ser negativo.");
+  }
+
   return {
     client_id: input.client_id,
     technical_record_id: input.technical_record_id || null,
-    appointment_type: input.appointment_type.trim() || "manutencao",
+    service_id: input.service_id,
+    amount,
     scheduled_at: scheduledAt.toISOString(),
     status: input.status,
     notes: input.notes?.trim() || null,
@@ -93,27 +127,34 @@ export function getAppointmentStatusLabel(status: AppointmentStatus | string) {
   return APPOINTMENT_STATUS_OPTIONS.find((item) => item.value === status)?.label ?? status;
 }
 
-export function getAppointmentTypeLabel(type: string) {
-  return APPOINTMENT_TYPE_OPTIONS.find((item) => item.value === type)?.label ?? type;
+export function getAppointmentServiceName(appointment: Pick<Appointment, "service">) {
+  return appointment.service?.name ?? "Serviço removido";
+}
+
+export function formatAppointmentAmount(amount: number | null | undefined) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(toNumber(amount));
 }
 
 export async function listAppointments(): Promise<Appointment[]> {
   const { data, error } = await supabase
     .from("appointments")
-    .select("*, client:clients(id,name,phone)")
+    .select(APPOINTMENT_SELECT)
     .order("scheduled_at", { ascending: true });
   if (error) throwSupabaseError(error, "Erro ao carregar atendimentos.");
-  return (data ?? []) as Appointment[];
+  return ((data ?? []) as Appointment[]).map(normalizeAppointment);
 }
 
 export async function listClientAppointments(clientId: string): Promise<Appointment[]> {
   const { data, error } = await supabase
     .from("appointments")
-    .select("*, client:clients(id,name,phone)")
+    .select(APPOINTMENT_SELECT)
     .eq("client_id", clientId)
     .order("scheduled_at", { ascending: true });
   if (error) throwSupabaseError(error, "Erro ao carregar atendimentos da cliente.");
-  return (data ?? []) as Appointment[];
+  return ((data ?? []) as Appointment[]).map(normalizeAppointment);
 }
 
 export async function createAppointment(input: AppointmentInput): Promise<Appointment> {
@@ -127,10 +168,10 @@ export async function createAppointment(input: AppointmentInput): Promise<Appoin
   const { data, error } = await supabase
     .from("appointments")
     .insert({ user_id: userId, ...normalized })
-    .select("*, client:clients(id,name,phone)")
+    .select(APPOINTMENT_SELECT)
     .single();
   if (error) throwSupabaseError(error, "Erro ao criar atendimento.");
-  return data as Appointment;
+  return normalizeAppointment(data as Appointment);
 }
 
 export async function updateAppointment(id: string, input: AppointmentInput): Promise<Appointment> {
@@ -144,10 +185,10 @@ export async function updateAppointment(id: string, input: AppointmentInput): Pr
     .from("appointments")
     .update(normalized)
     .eq("id", id)
-    .select("*, client:clients(id,name,phone)")
+    .select(APPOINTMENT_SELECT)
     .single();
   if (error) throwSupabaseError(error, "Erro ao atualizar atendimento.");
-  return data as Appointment;
+  return normalizeAppointment(data as Appointment);
 }
 
 export async function updateAppointmentStatus(
@@ -158,22 +199,22 @@ export async function updateAppointmentStatus(
     .from("appointments")
     .update({ status })
     .eq("id", id)
-    .select("*, client:clients(id,name,phone)")
+    .select(APPOINTMENT_SELECT)
     .single();
   if (error) throwSupabaseError(error, "Erro ao atualizar status do atendimento.");
-  return data as Appointment;
+  return normalizeAppointment(data as Appointment);
 }
 
 export async function listUpcomingAppointments(limit = 5): Promise<Appointment[]> {
   const { data, error } = await supabase
     .from("appointments")
-    .select("*, client:clients(id,name,phone)")
+    .select(APPOINTMENT_SELECT)
     .eq("status", "scheduled")
     .gte("scheduled_at", new Date().toISOString())
     .order("scheduled_at", { ascending: true })
     .limit(limit);
   if (error) throwSupabaseError(error, "Erro ao carregar próximos atendimentos.");
-  return (data ?? []) as Appointment[];
+  return ((data ?? []) as Appointment[]).map(normalizeAppointment);
 }
 
 export async function countTodayAppointments(): Promise<number> {

@@ -53,6 +53,7 @@ export function getSupabaseErrorMessage(
 
   if (normalized.includes("foreign key") || normalized.includes("23503")) {
     if (normalized.includes("client")) return "Selecione uma cliente válida.";
+    if (normalized.includes("service")) return "Selecione um serviço válido.";
     if (normalized.includes("product") || normalized.includes("glue")) {
       return "Selecione um produto válido.";
     }

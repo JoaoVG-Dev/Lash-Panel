@@ -24,8 +24,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   APPOINTMENT_STATUS_OPTIONS,
+  formatAppointmentAmount,
+  getAppointmentServiceName,
   getAppointmentStatusLabel,
-  getAppointmentTypeLabel,
   listAppointments,
   updateAppointmentStatus,
   type Appointment,
@@ -401,8 +402,13 @@ function AppointmentCard({
           </div>
           <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
             <CalendarClock className="h-3.5 w-3.5" />
-            {getAppointmentTypeLabel(appointment.appointment_type)} -{" "}
             {formatDateTime(appointment.scheduled_at)}
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-foreground">
+            {getAppointmentServiceName(appointment)}
+          </p>
+          <p className="mt-0.5 text-xs font-bold text-primary">
+            {formatAppointmentAmount(appointment.amount)}
           </p>
           {appointment.client?.phone && (
             <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
