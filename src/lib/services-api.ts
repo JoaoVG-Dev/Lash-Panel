@@ -7,6 +7,7 @@ export type Service = {
   name: string;
   description: string | null;
   price: number;
+  duration_minutes: number;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -16,6 +17,7 @@ export type ServiceInput = {
   name: string;
   description?: string | null;
   price: number;
+  duration_minutes: number;
   active: boolean;
 };
 
@@ -29,12 +31,14 @@ function normalizeService(row: Service): Service {
   return {
     ...row,
     price: toNumber(row.price),
+    duration_minutes: toNumber(row.duration_minutes),
   };
 }
 
 function normalizeInput(input: ServiceInput) {
   const name = input.name.trim();
   const price = Number(input.price);
+  const durationMinutes = Number(input.duration_minutes);
 
   if (!name) {
     throw new Error("Informe o nome do serviço.");
@@ -44,10 +48,15 @@ function normalizeInput(input: ServiceInput) {
     throw new Error("Preço não pode ser negativo.");
   }
 
+  if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+    throw new Error("A duração deve ser maior que zero.");
+  }
+
   return {
     name,
     description: input.description?.trim() || null,
     price,
+    duration_minutes: durationMinutes,
     active: input.active,
   };
 }
@@ -57,7 +66,11 @@ export async function listServices(): Promise<Service[]> {
     .from("services")
     .select("*")
     .order("name", { ascending: true });
-  if (error) throwSupabaseError(error, "Erro ao carregar serviços.");
+
+  if (error) {
+    throwSupabaseError(error, "Erro ao carregar serviços.");
+  }
+
   return ((data ?? []) as Service[]).map(normalizeService);
 }
 
@@ -66,10 +79,17 @@ export async function createService(input: ServiceInput): Promise<Service> {
 
   const { data, error } = await supabase
     .from("services")
-    .insert({ user_id: userId, ...normalizeInput(input) })
+    .insert({
+      user_id: userId,
+      ...normalizeInput(input),
+    })
     .select()
     .single();
-  if (error) throwSupabaseError(error, "Erro ao criar serviço.");
+
+  if (error) {
+    throwSupabaseError(error, "Erro ao criar serviço.");
+  }
+
   return normalizeService(data as Service);
 }
 
@@ -80,11 +100,18 @@ export async function updateService(id: string, input: ServiceInput): Promise<Se
     .eq("id", id)
     .select()
     .single();
-  if (error) throwSupabaseError(error, "Erro ao atualizar serviço.");
+
+  if (error) {
+    throwSupabaseError(error, "Erro ao atualizar serviço.");
+  }
+
   return normalizeService(data as Service);
 }
 
 export async function deleteService(id: string): Promise<void> {
   const { error } = await supabase.from("services").delete().eq("id", id);
-  if (error) throwSupabaseError(error, "Erro ao excluir serviço.");
+
+  if (error) {
+    throwSupabaseError(error, "Erro ao excluir serviço.");
+  }
 }

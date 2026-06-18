@@ -32,6 +32,7 @@ function emptyForm(): ServiceInput {
     name: "",
     description: "",
     price: 0,
+    duration_minutes: 60,
     active: true,
   };
 }
@@ -49,6 +50,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
             name: service.name,
             description: service.description ?? "",
             price: service.price,
+            duration_minutes: service.duration_minutes,
             active: service.active,
           }
         : emptyForm(),
@@ -63,7 +65,9 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["services"] });
       qc.invalidateQueries({ queryKey: ["appointments"] });
+
       toast.success(service ? "Serviço atualizado" : "Serviço cadastrado");
+
       onOpenChange(false);
     },
     onError: (err: unknown) => {
@@ -73,12 +77,19 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+
     if (!form.name.trim()) {
       toast.error("Informe o nome do serviço");
       return;
     }
+
     if (!Number.isFinite(Number(form.price)) || Number(form.price) < 0) {
       toast.error("Informe um preço válido");
+      return;
+    }
+
+    if (!Number.isFinite(Number(form.duration_minutes)) || Number(form.duration_minutes) <= 0) {
+      toast.error("Informe uma duração válida");
       return;
     }
 
@@ -95,10 +106,16 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="service-name">Nome *</Label>
+
             <Input
               id="service-name"
               value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  name: event.target.value,
+                })
+              }
               placeholder="Volume brasileiro, manutenção..."
               required
             />
@@ -106,43 +123,82 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
 
           <div className="space-y-1.5">
             <Label htmlFor="service-description">Descrição</Label>
+
             <Textarea
               id="service-description"
               rows={3}
               value={form.description ?? ""}
-              onChange={(event) => setForm({ ...form, description: event.target.value })}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  description: event.target.value,
+                })
+              }
             />
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="service-price">Preço *</Label>
+
               <Input
                 id="service-price"
                 type="number"
                 min={0}
                 step="0.01"
                 value={form.price}
-                onChange={(event) => setForm({ ...form, price: Number(event.target.value || 0) })}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    price: Number(event.target.value || 0),
+                  })
+                }
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="service-status">Status</Label>
-              <Select
-                value={form.active ? "active" : "inactive"}
-                onValueChange={(value) => setForm({ ...form, active: value === "active" })}
-              >
-                <SelectTrigger id="service-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Ativo</SelectItem>
-                  <SelectItem value="inactive">Inativo</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="service-duration">Duração (min) *</Label>
+
+              <Input
+                id="service-duration"
+                type="number"
+                min={1}
+                step="1"
+                value={form.duration_minutes}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    duration_minutes: Number(event.target.value || 60),
+                  })
+                }
+                required
+              />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="service-status">Status</Label>
+
+            <Select
+              value={form.active ? "active" : "inactive"}
+              onValueChange={(value) =>
+                setForm({
+                  ...form,
+                  active: value === "active",
+                })
+              }
+            >
+              <SelectTrigger id="service-status">
+                <SelectValue />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="active">Ativo</SelectItem>
+
+                <SelectItem value="inactive">Inativo</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-2">
@@ -154,6 +210,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: Props) {
             >
               Cancelar
             </Button>
+
             <Button type="submit" disabled={mutation.isPending}>
               {mutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
