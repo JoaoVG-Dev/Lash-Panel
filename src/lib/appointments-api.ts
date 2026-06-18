@@ -27,12 +27,20 @@ export type Appointment = {
   client_id: string;
   technical_record_id: string | null;
   service_id: string | null;
+
   amount: number;
+  total_amount: number;
+
   scheduled_at: string;
+  starts_at: string;
+  ends_at: string;
+
   status: AppointmentStatus;
   notes: string | null;
+
   created_at: string;
   updated_at: string;
+
   client?: AppointmentClient | null;
   service?: AppointmentService | null;
 };
@@ -49,6 +57,9 @@ export type AppointmentInput = {
 
 type NormalizedAppointmentInput = Omit<AppointmentInput, "scheduled_at"> & {
   scheduled_at: string;
+  starts_at: string;
+  ends_at: string;
+  total_amount: number;
 };
 
 export const APPOINTMENT_STATUS_OPTIONS: Array<{ value: AppointmentStatus; label: string }> = [
@@ -70,6 +81,8 @@ function normalizeAppointment(row: Appointment): Appointment {
   return {
     ...row,
     amount: toNumber(row.amount),
+    total_amount: toNumber(row.total_amount),
+
     service: row.service
       ? {
           ...row.service,
@@ -85,21 +98,33 @@ function normalize(input: AppointmentInput): NormalizedAppointmentInput {
   if (!input.scheduled_at) throw new Error("Informe a data e horário do atendimento.");
 
   const scheduledAt = new Date(input.scheduled_at);
+
   if (Number.isNaN(scheduledAt.getTime())) {
     throw new Error("Informe uma data e horário válidos para o atendimento.");
   }
 
   const amount = Number(input.amount);
+
   if (!Number.isFinite(amount) || amount < 0) {
     throw new Error("Valor do atendimento não pode ser negativo.");
   }
+
+  const startsAt = scheduledAt.toISOString();
+
+  const endsAt = new Date(scheduledAt.getTime() + 60 * 60 * 1000).toISOString();
 
   return {
     client_id: input.client_id,
     technical_record_id: input.technical_record_id || null,
     service_id: input.service_id,
+
     amount,
-    scheduled_at: scheduledAt.toISOString(),
+    total_amount: amount,
+
+    scheduled_at: startsAt,
+    starts_at: startsAt,
+    ends_at: endsAt,
+
     status: input.status,
     notes: input.notes?.trim() || null,
   };
